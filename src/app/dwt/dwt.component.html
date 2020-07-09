@@ -1,0 +1,412 @@
+<div [ngClass]="{'mainContent':true, 'mobile':bMobile, 'desktop':!bMobile}">
+  <div *ngIf="dwtMounted" id={{containerId}}>
+  </div>
+  <div class="barcodeInfoRectContainer"
+    *ngIf="barcodeReaderOptions.showRects && dwtMounted && barcodeRectsOnCurrentImage.length>0"
+    [ngStyle]="{'position':'absolute', 'left':mainViewerPos.x + 'px','top':mainViewerPos.y +'px'}">
+    <div class="barcodeInfoRect" *ngFor="let rect of barcodeRectsOnCurrentImage; let i = index"
+      [ngStyle]="{'left': rect.x + 'px', 'top':rect.y + 'px', 'width':rect.w + 'px','height':rect.h + 'px'}">
+      <div class="spanContainer"><span>{{i+1}}</span> </div>
+    </div>
+    <span style="font-size: large;">Barcode location indicators dissappearing in
+      {{barcodeReaderOptions.rectShowingTime}}</span>
+  </div>
+  <div *ngIf="!dwtMounted" class="d-flex justify-content-center">
+    <div class="spinner-border" role="status" style="margin:auto;">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+  <div class="controlPanel" *ngIf="dwtMounted">
+    <button class="btn btn-outline-info acquire" *ngIf="bMobile" value="acquire" title="Acquire Images"
+      (click)="acquire()"></button>
+    <button class="btn btn-outline-info acquire" *ngIf="!bMobile" value="acquire" title="Acquire Images"
+      (click)="openModal(scannerModalRef,'acquire')"></button>
+    <button class="btn btn-outline-info camera" value="camera" title="Use Camera"
+      (click)="openModal(cameraModalRef,'camera')"></button>
+    <button class="btn btn-outline-info edit" value="edit" title="Edit the image" (click)="showEditor()"></button>
+    <button class="btn btn-outline-info barcode" value="barcode" title="Read Barcode"
+      (click)="openModal(barcodeModalRef,'barcode')"></button>
+    <button class="btn btn-outline-info ocr" value="ocr" title="Perform OCR"
+      (click)="openModal(ocrModalRef,'ocr')"></button>
+    <button class="btn btn-outline-info save" value="save" title="Save &amp; Upload"
+      (click)="openModal(saveModalRef,'save')"></button>
+  </div>
+</div>
+<ng-template tabindex="-1" #scannerModalRef role="dialog" aria-labelledby="acquireModalLabel" aria-hidden="true"
+  let-acquireModal>
+  <div class="modal-header">
+    <h5 class="modal-title"><span *ngIf="!bWASM">Scan A Document</span><span *ngIf="bWASM">Load An
+        Existing File</span></h5>
+    <button tabindex="-1" type="button" class="close" aria-label="Close" (click)="acquireModal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <ul class="list-group">
+      <li *ngIf="bWASM" class="list-group-item">
+        <div class="input-group-prepend" style="display: flex;">
+          <label class="input-group-text" style="width: 23%;margin-right: 2%;">
+            <input type="checkbox" [(ngModel)]="formatsToImport.JPG"
+              aria-label="Checkbox for Import JPEG">&nbsp;&nbsp;JPEG</label>
+          <label class="input-group-text" style="width: 23%;margin-right: 2%;">
+            <input type="checkbox" [(ngModel)]="formatsToImport.PNG"
+              aria-label="Checkbox for Import PNG">&nbsp;&nbsp;PNG
+          </label>
+          <label class="input-group-text" style="width: 23%;margin-right: 2%;">
+            <input type="checkbox" [(ngModel)]="formatsToImport.TIF"
+              aria-label="Checkbox for Import TIF">&nbsp;&nbsp;TIF
+          </label>
+          <label class="input-group-text" style="width: 23%;">
+            <input type="checkbox" [(ngModel)]="formatsToImport.PDF"
+              aria-label="Checkbox for Import PDF">&nbsp;&nbsp;PDF
+          </label>
+        </div>
+      </li>
+      <li *ngIf="!bWASM" class="list-group-item">
+        <div class="input-group-prepend">
+          <label class="input-group-text" style="width: 18%;" for="device">Device</label>
+          <select class="custom-select" style="width: 80%;" id="device" [(ngModel)]="deviceName"
+            (change)="handleDeviceChange()">
+            <option selected>Choose...</option>
+            <option *ngFor="let device of (devices | callback:isScannerFilter)">{{device.name}}</option>
+          </select>
+        </div>
+      </li>
+      <li *ngIf="!bWASM" class="list-group-item">
+        <div class="input-group-prepend" style="display: flex;">
+          <label class="input-group-text" style="width: 32%;margin-right: 2%;">
+            <input type="checkbox" [(ngModel)]="scanOptions.IfShowUI" aria-label="Checkbox for ShowUI">&nbsp;&nbsp;Show
+            UI</label>
+          <label class="input-group-text" style="width: 32%;margin-right: 2%;">
+            <input type="checkbox" [(ngModel)]="scanOptions.IfFeederEnabled"
+              aria-label="Checkbox for ADF">&nbsp;&nbsp;AutoFeeder
+          </label>
+          <label class="input-group-text" style="width: 32%;">
+            <input type="checkbox" [(ngModel)]="scanOptions.IfDuplexEnabled"
+              aria-label="Checkbox for Duplex">&nbsp;&nbsp;Duplex
+          </label>
+        </div>
+      </li>
+      <li *ngIf="!bWASM" class="list-group-item">
+        <div class="input-group-prepend" style="display: flex;">
+          <label class="input-group-text" style="width: 32%;margin-right: 2%;">
+            <input type="radio" [(ngModel)]="scanOptions.PixelType" value=0
+              aria-label="Radio button for BW">&nbsp;&nbsp;B&amp;W
+          </label>
+          <label class="input-group-text" style="width: 32%;margin-right: 2%;">
+            <input type="radio" [(ngModel)]="scanOptions.PixelType" value=1
+              aria-label="Radio button for Gray">&nbsp;&nbsp;Gray
+          </label>
+          <label class="input-group-text" style="width: 32%;">
+            <input type="radio" [(ngModel)]="scanOptions.PixelType" value=2
+              aria-label="Radio button for RGB">&nbsp;&nbsp;Color
+          </label>
+        </div>
+      </li>
+      <li *ngIf="!bWASM" class="list-group-item">
+        <div class="input-group-prepend">
+          <label class="input-group-text" style="width: 48%;" for="Resolution">Resolution</label>
+          <select class="custom-select" style="width: 50%;" id="Resolution" [(ngModel)]="scanOptions.Resolution">
+            <option selected>Choose...</option>
+            <option value="100">100</option>
+            <option value="150">150</option>
+            <option value="200">200</option>
+            <option value="300">300</option>
+          </select>
+        </div>
+      </li>
+    </ul>
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError && !emptyBuffer">
+      {{instantError}}</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" style="width:80%;" (click)="acquire()"><span
+        *ngIf="!bWASM">Scan</span><span *ngIf="bWASM">Load</span></button>
+  </div>
+  <div class="modal-footer" *ngIf="!bWASM">
+    <div>If you don't have a scanner, you can load an existing file</div>
+    <button type="button" class="btn btn-secondary" style="width:80%;" (click)="load()">Load</button>
+  </div>
+</ng-template>
+<ng-template tabindex="-1" #cameraModalRef role="dialog" aria-labelledby="cameraModalLabel" aria-hidden="true"
+  let-cameraModal>
+  <div class="modal-header">
+    <h5 class="modal-title">Capture from a Camera</h5>
+    <button tabindex="-1" type="button" class="close" aria-label="Close" (click)="cameraModal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div *ngIf="!bCameraAddonUsable" class="modal-body alert alert-info" role="alert">
+    Camera support on your current platform is under development, stay tuned!!
+  </div>
+  <div *ngIf="bCameraAddonUsable" class="modal-body">
+    <ul class="list-group">
+      <li class="list-group-item">
+        <div class="input-group-prepend">
+          <label class="input-group-text" style="width: 20%;" for="device">Device</label>
+          <select class="custom-select" style="width: 80%;" id="device" [(ngModel)]="deviceName"
+            (change)="handleDeviceChange()">
+            <option selected>Choose...</option>
+            <option *ngFor="let device of (devices | callback:isCameraFilter)">{{device.name}}</option>
+          </select>
+        </div>
+      </li>
+      <li style="height:30vh">
+        <div id={{videoContainerId}}></div>
+      </li>
+      <li *ngIf="cameraOptions.length>0" class="list-group-item">
+        <select [ngClass]="{'custom-select half':true}" [(ngModel)]="currentOption" (change)="handleOptionChange()">
+          <option *ngFor="let cameraOption of cameraOptions">{{cameraOption.name}}</option>
+        </select>
+        <select [ngClass]="{'custom-select half':true}" [(ngModel)]="currentItem" (change)="handleItemPicked()">
+          <option *ngFor="let item of currentOptionItems">{{item.value}}</option>
+        </select>
+        <div *ngIf="showRangePicker" class="range-content">
+          <span *ngIf="rangePicker.bMutable" class="range-current">{{rangePicker.title}} (<span
+              *ngIf="rangePicker.bMutable" class="resetRangeButton" (click)="handleRangeReset()">Reset</span>):
+            {{rangePicker.value}} </span>
+          <span *ngIf="rangePicker.bMutable">{{rangePicker.min}}</span>
+          <input type="range" *ngIf="rangePicker.bMutable" [(ngModel)]="rangePicker.value" [min]="rangePicker.min"
+            [max]="rangePicker.max" [step]="rangePicker.step" (change)="handleRangeChange()" />
+          <span *ngIf="rangePicker.bMutable">{{rangePicker.max}}</span>
+          <span *ngIf="!rangePicker.bMutable" class="range-current">Default and only value (immutable):
+            {{rangePicker.value}}</span>
+
+        </div>
+      </li>
+    </ul>
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError && !emptyBuffer">
+      {{instantError}}</div>
+  </div>
+  <div *ngIf="bCameraAddonUsable" class="modal-footer" style="flex-direction: row;">
+    <button type="button" class="btn btn-primary" style="width:48%;" (click)="toggleVideo()">{{showVideoText}}</button>
+    <button type="button" class="btn btn-primary" style="width:48%;" (click)="acquireFromCamera()">Capture</button>
+  </div>
+</ng-template>
+<ng-template tabindex="-1" #barcodeModalRef role="dialog" aria-labelledby="barcodeModalLabel" aria-hidden="true"
+  let-barcodeModal>
+  <div class="modal-header">
+    <h5 class="modal-title">Read Barcode</h5>
+    <button tabindex="-1" type="button" class="close" aria-label="Close" (click)="barcodeModal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body barcodeResultText" *ngIf="outputMessages.length>0">
+    <button type="button" class="close" aria-label="Close" style="position: sticky; top:0"
+      (click)="hideBarcodeTextResults()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    <ul class="message">
+      <li *ngFor="let outputMessage of outputMessages; let i = index" [ngClass]="outputMessage.type">
+        {{outputMessage.text}}</li>
+    </ul>
+    <input type="checkbox" [(ngModel)]="barcodeReaderOptions.showRects"
+      aria-label="Checkbox for show Rects">&nbsp;&nbsp;Show barcode locations on the image (5s).
+  </div>
+  <div class="modal-body" *ngIf="outputMessages.length===0">
+    <ul class="list-group">
+      <li class="list-group-item">
+        <h6><input type="checkbox" (click)="toggleCheckAll()" [(ngModel)]="barcodeReaderOptions.Symbologies.All"
+            aria-label="Checkbox for check|uncheck all">&nbsp;&nbsp;Barcode Types:
+        </h6>
+        <div class="input-group-prepend barcodeReaderOptions">
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.Linear" name="BarcodeType"
+              aria-label="Checkbox for Linear Barcodes" value="0x3FF">&nbsp;&nbsp;
+            Linear
+            &nbsp;&nbsp;<img id="linearToolTip" src="assets/imgs/barcode/oned.gif" title=""></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.QRCode" name="BarcodeType"
+              aria-label="Checkbox for QRCode" value="0x4000000">&nbsp;&nbsp;
+            QRCode
+            &nbsp;&nbsp;<img id="qrCodeToolTip" src="assets/imgs/barcode/qr.gif"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.Pdf" name="BarcodeType"
+              aria-label="Checkbox for PDF417" value="0x2000000">&nbsp;&nbsp;
+            PDF417
+            &nbsp;&nbsp;<img id="pdf417ToolTip" src="assets/imgs/barcode/pdf417.gif" title=""></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.DM" name="BarcodeType"
+              aria-label="Checkbox for DataMatrix" value=" 0x8000000">&nbsp;&nbsp;
+            DataMatrix
+            &nbsp;&nbsp;<img id="dmToolTip" src="assets/imgs/barcode/dm.gif"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.Aztec" name="BarcodeType"
+              aria-label="Checkbox for Aztec Code" value=" 0x10000000">&nbsp;&nbsp;
+            Aztec
+            &nbsp;&nbsp;<img id="aztecToolTip" src="assets/imgs/barcode/aztec.gif"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.GS1Databar" name="BarcodeType"
+              aria-label="Checkbox for GS1 DataBar" value=" 0x3F800">&nbsp;&nbsp;
+            Databar
+            &nbsp;&nbsp;<img id="gs1DatabarToolTip" src="assets/imgs/barcode/gs1databar.png"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.Maxi" name="BarcodeType"
+              aria-label="Checkbox for Maxicode" value=" 0x20000000">&nbsp;&nbsp;
+            Maxicode
+            &nbsp;&nbsp;<img id="maxiToolTip" src="assets/imgs/barcode/maxicode.png"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.Patch" name="BarcodeType"
+              aria-label="Checkbox for Patch Code" value=" 0x40000">&nbsp;&nbsp;
+            Patch
+            &nbsp;&nbsp;<img id="patchToolTip" src="assets/imgs/barcode/patchcode.png"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.Postal" name="BarcodeType2"
+              aria-label="Checkbox for Postal Code" value=" 0x1F00000">&nbsp;&nbsp;
+            Postal
+            &nbsp;&nbsp;<img id="postalToolTip" src="assets/imgs/barcode/postalcode.png"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.Dot" name="BarcodeType2"
+              aria-label="Checkbox for DotCode" value="0x2">&nbsp;&nbsp;
+            DotCode
+            &nbsp;&nbsp;<img id="dotToolTip" src="assets/imgs/barcode/dotcode.png"></label>
+          <label class="input-group-text">
+            <input type="checkbox" [(ngModel)]="barcodeReaderOptions.Symbologies.GS1Composite" name="BarcodeType"
+              aria-label="Checkbox for GS1 Composite" value=" 0xFFFFFFFF80000000">&nbsp;&nbsp;
+            Composite
+            &nbsp;&nbsp;<img id="gs1CompositeToolTip" src="assets/imgs/barcode/gs1composite.png"></label>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <h6>Barcode Mode:</h6>
+        <div class="input-group-prepend" style="display: flex;">
+          <label class="input-group-text barcodeReadMode" style="width: 32%;margin-right: 2%; ">
+            <input type="radio" [(ngModel)]="barcodeReaderOptions.Mode" value="speed"
+              aria-label="Radio button for Speed">&nbsp;&nbsp;Speed
+          </label>
+          <label class="input-group-text barcodeReadMode" style="width: 32%;margin-right: 2%;">
+            <input type="radio" [(ngModel)]="barcodeReaderOptions.Mode" value="balance"
+              aria-label="Radio button for Balance">&nbsp;&nbsp;Balance
+          </label>
+          <label class="input-group-text barcodeReadMode" style="width: 32%;">
+            <input type="radio" [(ngModel)]="barcodeReaderOptions.Mode" value="coverage"
+              aria-label="Radio button for Coverage">&nbsp;&nbsp;Coverage
+          </label>
+        </div>
+      </li>
+    </ul>
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">{{instantError}}</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" style="width:80%;"
+      [disabled]="emptyBuffer || barcodeButtonText==='Reading...'"
+      (click)="readBarcode()">{{barcodeButtonText}}</button>
+  </div>
+</ng-template>
+<ng-template tabindex="-1" #ocrModalRef role="dialog" aria-labelledby="ocrModalLabel" aria-hidden="true" let-ocrModal>
+  <div class="modal-header">
+    <h5 class="modal-title">OCR</h5>
+    <button tabindex="-1" type="button" class="close" aria-label="Close" (click)="ocrModal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div *ngIf="bWASM" class="modal-body alert alert-info" role="alert">
+    OCR support on your current platform is under development, stay tuned!!
+  </div>
+  <div *ngIf="ocrReady && !bWASM" class="modal-body">
+    <select class="custom-select" style="width: 50%;" id="ddlLanguages" [(ngModel)]="ocrOptions.Language">
+      <option *ngFor="let language of OCRLanguages; let i = index" value={{language.val}}>{{language.desc}}</option>
+    </select>
+    <select class="custom-select" style="width: 50%;" id="ddlOCROutputFormat" [(ngModel)]="ocrOptions.OutputFormat">
+      <option *ngFor="let outputFormat of OCROutputFormats; let i = index" value={{outputFormat.val}}>
+        {{outputFormat.desc}}</option>
+    </select>
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">{{instantError}}</div>
+    <div class="ocrResultString" *ngIf="ocrResultString!==''">{{ocrResultString}}</div>
+    <ul class="list-group" *ngIf="ocrResultURLs.length>0">
+      <li class="list-group-item" *ngFor="let url of ocrResultURLs; let i=index"><a class="btn btn-success w-100"
+          target="_blank" [href]="url | safeurl">{{ocrResultFiles[i].name}}</a>
+      </li>
+    </ul>
+  </div>
+  <div *ngIf="!ocrReady && !bWASM" class="modal-body d-flex justify-content-center">
+    <div class="spinner-border" role="status" style="margin:auto;">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+  <div *ngIf="ocrReady && !bWASM" class="modal-footer">
+    <button type="button" style="width:80%;" class="btn btn-primary" [disabled]="emptyBuffer"
+      (click)="doOCR()">{{ocrButtonText}}</button>
+  </div>
+</ng-template>
+<ng-template tabindex="-1" #saveModalRef role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true"
+  let-saveModal>
+  <div class="modal-header">
+    <h5 class="modal-title">{{saveOptions.buttonText}}</h5>
+    <button tabindex="-1" type="button" class="close" aria-label="Close" (click)="saveModal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <ul class="list-group">
+      <li class="list-group-item">
+        <div class="input-group-prepend">
+          <label class="input-group-text" style="width: 40%;" for="outPutType">Type:</label>
+          <select class="custom-select" style="width: 60%;" id="outPutType" (ngModelChange)="outPutTypeChanged($event)"
+            [(ngModel)]="saveOptions.outPutType">
+            <option>File</option>
+            <option>Blob</option>
+            <option>Base64</option>
+          </select>
+        </div>
+      </li>
+      <li class="list-group-item">
+        <div class="input-group-prepend">
+          <label class="input-group-text" style="width: 40%;" for="outPutFormat">Format:</label>
+          <select class="custom-select" style="width: 60%;" id="outPutFormat" [(ngModel)]="saveOptions.outPutFormat"
+            (ngModelChange)="handleOutPutFormatChange($event)">
+            <option>BMP</option>
+            <option>JPG</option>
+            <option>TIF</option>
+            <option>PNG</option>
+            <option>PDF</option>
+          </select>
+        </div>
+      </li>
+      <li *ngIf="saveOptions.outPutType === 'File'" class="list-group-item">
+        <div class="input-group-prepend">
+          <label class="input-group-text" style="width: 40%;" for="fileName">File Name:</label>
+          <input type="text" class="custom-select" style="width: 60%;" id="fileName"
+            [(ngModel)]="saveOptions.fileName" />
+        </div>
+      </li>
+      <li *ngIf="!bWASM && saveOptions.outPutType === 'File'" class="list-group-item">
+        <label class="input-group-text" style="width: 100%;">
+          <input type="checkbox" [(ngModel)]="saveOptions.upload" aria-label="Checkbox for upload"
+            (ngModelChange)="outPutTypeChanged('File')">&nbsp;&nbsp;Upload To
+          Server</label>
+      </li>
+      <li class="list-group-item"
+        *ngIf="(saveOptions.outPutFormat === 'TIF' || saveOptions.outPutFormat === 'PDF') && !emptyBuffer">
+        <label class="input-group-text" style="width: 100%;">
+          <input type="checkbox" [(ngModel)]="saveOptions.multiPage" (ngModelChange)="handleMultiPageCheck()"
+            aria-label="Checkbox for multiPage">&nbsp;&nbsp;Multi-Page&nbsp;&nbsp;</label>
+      </li>
+      <li
+        *ngIf="saveOptions.multiPage && saveOptions.indices.length>0 && (saveOptions.outPutFormat === 'TIF' || saveOptions.outPutFormat === 'PDF')"
+        class="list-group-item" style="display:flex; overflow-x: auto; overflow-y: hidden; margin: 0 5%;">
+        <label *ngFor="let index of saveOptions.indices" class="input-group-text" style="width: 20%; margin-right: 3%;">
+          <input type="checkbox" [(ngModel)]="index.selected"
+            (ngModelChange)="handleIndexSelection($event,index.number)"
+            aria-label="Checkbox for targetIndices">&nbsp;&nbsp;{{index.number+1}}</label>
+      </li>
+      <li class="list-group-item" style="max-height: 25vh; overflow-y:auto;"
+        *ngIf="saveResults.savedFiles.length>0 ||saveResults.uploadedFiles.length>0 ||saveResults.blobURL.length>0||saveResults.base64String.length>0">
+        <a *ngFor="let file of saveResults.uploadedFiles; let i = index" class="btn btn-success w-100 mb-2"
+          target="_blank" [href]="file.url | safeurl">{{file.name}}</a>
+        <a *ngFor="let url of saveResults.blobURL; let i = index" class="btn btn-success w-100 mb-2" target="_blank"
+          [href]="url | safeurl">{{saveResults.blob[i].name}}</a>
+        <button *ngFor="let file of saveResults.savedFiles; let i=index" class="btn btn-success w-100 mb-2"
+          (click)="copyFilePath(i)">{{saveResults.saveFileText[i]}}</button>
+        <button *ngFor="let string of saveResults.base64String; let i = index" class="btn btn-success w-100 mb-2"
+          (click)="copyBase64String(i)">{{saveResults.base64ButtonText[i]}}</button>
+      </li>
+    </ul>
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">{{instantError}}</div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" style="width:80%;" [disabled]="emptyBuffer" class="btn btn-primary"
+      (click)="save()">{{saveOptions.buttonText}}</button>
+  </div>
+</ng-template>
+<hr>

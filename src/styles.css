@@ -1,0 +1,15 @@
+/* You can add global styles to this file, and also import other style files */
+
+a#dwt-btn-install:hover {
+  text-decoration: none;
+}
+
+.DVS_WebViewer ul.thumbLists {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.DVS_WebViewer label {
+  margin-top: 0;
+  margin-bottom: 0;
+}
