@@ -860,13 +860,13 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
           if (this.saveOptions.multiPage) {
             let selectedIndices = this.DWObject.SelectedImagesIndices;
             this.dwtService.uploadToServer(selectedIndices, this.getImageType(this.saveOptions.outPutFormat), this.saveOptions.fileName)
-              .then(result => this.saveResults.uploadedFiles.push(result), err => this.instantError = err);
+              .then(result => { this.saveResults.uploadedFiles.push(result); this.instantError = ""; }, err => this.instantError = err);
           }
           else {
             let count = this.DWObject.HowManyImagesInBuffer;
             for (let i = 0; i < count; i++) {
               this.dwtService.uploadToServer([i], this.getImageType(this.saveOptions.outPutFormat), this.saveOptions.fileName + "_" + (i + 1))
-                .then(result => this.saveResults.uploadedFiles.push(result), err => this.instantError = err);
+                .then(result => { this.saveResults.uploadedFiles.push(result); this.instantError = ""; }, err => this.instantError = err);
             }
           }
         } else {
@@ -879,6 +879,7 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
               .then(result => {
                 this.saveResults.savedFiles.push(result);
                 this.saveResults.saveFileText.push("Copy path for " + result.name);
+                this.instantError = "";
               }, err => this.instantError = err);
           }
           else {
@@ -886,6 +887,7 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
             let fileName = this.saveOptions.fileName + "_" + 1;
             this.dwtService.saveLocally([0], this.getImageType(this.saveOptions.outPutFormat), fileName, true)
               .then(result => {
+                this.instantError = "";
                 this.saveResults.savedFiles.push(result);
                 this.saveResults.saveFileText.push("Copy path for  " + result.name);
                 /**
@@ -895,6 +897,7 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
                   let fileName = this.saveOptions.fileName + "_" + (i + 1);
                   this.dwtService.saveLocally([i], this.getImageType(this.saveOptions.outPutFormat), fileName, false)
                     .then(result => {
+                      this.instantError = "";
                       this.saveResults.savedFiles.push(result);
                       this.saveResults.saveFileText.push("Copy path for  " + result.name);
                     }, err => this.instantError = err);
@@ -913,7 +916,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
               let newFile = new File([blob], "Saved_Blob (" + blob.type + ")", { type: blob.type });
               this.saveResults.blob.push(newFile);
               this.saveResults.blobURL.push(URL.createObjectURL(newFile));
-            });
+              this.instantError = "";
+            }, err => this.instantError = err);
         } else {
           let count = this.DWObject.HowManyImagesInBuffer;
           for (let i = 0; i < count; i++) {
@@ -924,7 +928,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
                 let newFile = new File([blob], "Saved_Blob_" + (i + 1) + "(" + blob.type + ")", { type: blob.type });
                 this.saveResults.blob.push(newFile);
                 this.saveResults.blobURL.push(URL.createObjectURL(newFile));
-              });
+                this.instantError = "";
+              }, err => this.instantError = err);
           }
         }
         break;
@@ -937,7 +942,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
             .then(base64String => {
               this.saveResults.base64String.push(base64String);
               this.saveResults.base64ButtonText.push("Copy Base64 String");
-            });
+              this.instantError = "";
+            }, err => this.instantError = err);
         } else {
           let count = this.DWObject.HowManyImagesInBuffer;
           for (let i = 0; i < count; i++) {
@@ -947,7 +953,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
               .then(base64String => {
                 this.saveResults.base64String.push(base64String);
                 this.saveResults.base64ButtonText.push("Copy Base64 String for image " + i);
-              });
+                this.instantError = "";
+              }, err => this.instantError = err);
           }
         }
         break;
