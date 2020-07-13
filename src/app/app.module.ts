@@ -21,7 +21,7 @@ import { SafeurlPipe } from './safeurl.pipe';
     DragDropModule,
     NgbModule
   ],
-  providers: [],
+  providers: [SafeurlPipe],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

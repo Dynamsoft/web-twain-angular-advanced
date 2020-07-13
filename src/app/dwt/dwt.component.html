@@ -311,13 +311,13 @@
       <option *ngFor="let outputFormat of OCROutputFormats; let i = index" value={{outputFormat.val}}>
         {{outputFormat.desc}}</option>
     </select>
-    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">{{instantError}}</div>
     <div class="ocrResultString" *ngIf="ocrResultString!==''">{{ocrResultString}}</div>
     <ul class="list-group" *ngIf="ocrResultURLs.length>0">
-      <li class="list-group-item" *ngFor="let url of ocrResultURLs; let i=index"><a class="btn btn-success w-100"
-          target="_blank" [href]="url | safeurl">{{ocrResultFiles[i].name}}</a>
+      <li class="list-group-item" *ngFor="let url of ocrResultURLs; let i=index">
+        <button class="btn btn-success w-100" (click)="copyURLToShow(url)">{{ocrResultFiles[i].name}}</button>
       </li>
     </ul>
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">{{instantError}}</div>
   </div>
   <div *ngIf="!ocrReady && !bWASM" class="modal-body d-flex justify-content-center">
     <div class="spinner-border" role="status" style="margin:auto;">
@@ -394,8 +394,8 @@
         *ngIf="saveResults.savedFiles.length>0 ||saveResults.uploadedFiles.length>0 ||saveResults.blobURL.length>0||saveResults.base64String.length>0">
         <a *ngFor="let file of saveResults.uploadedFiles; let i = index" class="btn btn-success w-100 mb-2"
           target="_blank" [href]="file.url | safeurl">{{file.name}}</a>
-        <a *ngFor="let url of saveResults.blobURL; let i = index" class="btn btn-success w-100 mb-2" target="_blank"
-          [href]="url | safeurl">{{saveResults.blob[i].name}}</a>
+        <button *ngFor="let url of saveResults.blobURL; let i = index" class="btn btn-success w-100 mb-2"
+          (click)="copyURLToShow(url)">{{saveResults.blob[i].name}}</button>
         <button *ngFor="let file of saveResults.savedFiles; let i=index" class="btn btn-success w-100 mb-2"
           (click)="copyFilePath(i)">{{saveResults.saveFileText[i]}}</button>
         <button *ngFor="let string of saveResults.base64String; let i = index" class="btn btn-success w-100 mb-2"

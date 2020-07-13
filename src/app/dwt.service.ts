@@ -1,14 +1,12 @@
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import { environment } from './../environments/environment';
 import Dynamsoft from 'dwt';
-import { WebTwain } from 'dwt/WebTwain';
-import { DeviceConfiguration } from 'dwt/WebTwain.Acquire';
-import { DynamsoftEnums } from 'dwt/Dynamsoft.Enum';
 import { DWTInitialConfig } from 'dwt/Dynamsoft';
-import { ScanSetup } from 'dwt/WebTwain.Acquire';
-import { RuntimeSettings } from 'dwt/Addon.BarcodeReader';
-import { Subject } from 'rxjs';
-import { TextResults, TextResult } from 'dwt/Addon.BarcodeReader';
+import { DynamsoftEnums } from 'dwt/Dynamsoft.Enum';
+import { WebTwain } from 'dwt/WebTwain';
+import { DeviceConfiguration, ScanSetup } from 'dwt/WebTwain.Acquire';
+import { RuntimeSettings, TextResults, TextResult } from 'dwt/Addon.BarcodeReader';
 
 @Injectable({
   providedIn: 'root'
@@ -18,24 +16,45 @@ export class DwtService {
   barcodeSubject: Subject<any> = new Subject<any>();
   bufferSubject: Subject<string> = new Subject<string>();
   generalSubject: Subject<any> = new Subject<any>();
-
+  /**
+   * WebTwain objects
+   */
   protected _DWObject: WebTwain = null;
   protected _DWObjectEx: WebTwain = null;
-  protected _scannersCount: number;
-  protected _useCamera: boolean;
-  protected curImageTimeStamp: number = null;
-  private fileSavingPath = "C:";
-  private fileActualName = "";
-
+  /**
+   * Global environment that is detected by the dwt library.
+   */
   public runningEnvironment = Dynamsoft.Lib.env;
+  /**
+   * UseService only makes sense on desktop OS (Windows, macOS, Linux)
+   */
   public bUseService = false;
+  /**
+   * bWASM is for WASM mode which is opposed to the Service mode.
+   * WASM mode could both be on desktop or mobile
+   */
+  public bWASM: boolean = false;
+  /**
+   * Scan
+   */
+  protected _scannersCount: number;
   public devices: Device[] = [];
   public _selectedDevice: string = "";
-  public bWASM: boolean = false;
+  /**
+   * Camera
+   */
+  protected _useCamera: boolean;
   public bCameraAddonUsable: boolean = false;
+  public cameraOptions = [];
+  /**
+   * Barcode
+   */
   public barcodeResults = [];
-  public ocrResultBase64Strings: string[] = [];
   public barcodeRects = { imageIds: [], rects: [] };
+  /**
+   * OCR
+   */
+  public ocrResultBase64Strings: string[] = [];
   public OCRLanguages = [
     { desc: "Arabic", val: "ara" },
     { desc: "Bengali", val: "ben" },
@@ -67,46 +86,87 @@ export class DwtService {
   ];
   public OCROutputFormats = [
     { desc: "STRING", val: 0 },
-    { desc: "TXT", val: 0 },
     { desc: "Text PDF", val: 1 },
     { desc: "Image-over-text PDF", val: 2 }
   ];
-  public cameraOptions = [];
+  /**
+   * Save
+   */
+  private fileSavingPath = "C:";
+  private fileActualName = "";
+
   constructor() {
-    //for debug
-    (<any>window).ds = Dynamsoft;
-    //for debug
+    /**
+     * ResourcesPath & ProductKey must be set in order to use the library!
+     */
     Dynamsoft.WebTwainEnv.ResourcesPath = environment.Dynamsoft.resourcesPath;
     Dynamsoft.WebTwainEnv.ProductKey = environment.Dynamsoft.dwtProductKey;
+    /**
+     * ConnectToTheService is overwritten here for smoother install process.
+     */
     Dynamsoft.WebTwainEnv.ConnectToTheService = () => {
       this.mountDWT();
     };
   }
-  public mountDWT(UseService?: boolean): Promise<any> {
+  /**
+   * To make dynamsoft.webtwain.install.js compatible with Angular
+   */
+  modulizeInstallJS() {
+    let _DWT_Reconnect = (<any>window).DWT_Reconnect;
+    (<any>window).DWT_Reconnect = (...args) => _DWT_Reconnect.call({ Dynamsoft: Dynamsoft }, ...args);
+    let __show_install_dialog = (<any>window)._show_install_dialog;
+    (<any>window)._show_install_dialog = (...args) => __show_install_dialog.call({ Dynamsoft: Dynamsoft }, ...args);
+    let _OnWebTwainOldPluginNotAllowedCallback = (<any>window).OnWebTwainOldPluginNotAllowedCallback;
+    (<any>window).OnWebTwainOldPluginNotAllowedCallback = (...args) => _OnWebTwainOldPluginNotAllowedCallback.call({ Dynamsoft: Dynamsoft }, ...args);
+    let _OnWebTwainNeedUpgradeCallback = (<any>window).OnWebTwainNeedUpgradeCallback;
+    (<any>window).OnWebTwainNeedUpgradeCallback = (...args) => _OnWebTwainNeedUpgradeCallback.call({ Dynamsoft: Dynamsoft }, ...args);
+    let _OnWebTwainPreExecuteCallback = (<any>window).OnWebTwainPreExecuteCallback;
+    (<any>window).OnWebTwainPreExecuteCallback = (...args) => _OnWebTwainPreExecuteCallback.call({ Dynamsoft: Dynamsoft }, ...args);
+    let _OnWebTwainPostExecuteCallback = (<any>window).OnWebTwainPostExecuteCallback;
+    (<any>window).OnWebTwainPostExecuteCallback = (...args) => _OnWebTwainPostExecuteCallback.call({ Dynamsoft: Dynamsoft }, ...args);
+    let _OnRemoteWebTwainNotFoundCallback = (<any>window).OnRemoteWebTwainNotFoundCallback;
+    (<any>window).OnRemoteWebTwainNotFoundCallback = (...args) => _OnRemoteWebTwainNotFoundCallback.call({ Dynamsoft: Dynamsoft }, ...args);
+    let _OnRemoteWebTwainNeedUpgradeCallback = (<any>window).OnRemoteWebTwainNeedUpgradeCallback;
+    (<any>window).OnRemoteWebTwainNeedUpgradeCallback = (...args) => _OnRemoteWebTwainNeedUpgradeCallback.call({ Dynamsoft: Dynamsoft }, ...args);
+    let _OnWebTWAINDllDownloadFailure = (<any>window).OnWebTWAINDllDownloadFailure;
+    (<any>window).OnWebTWAINDllDownloadFailure = (...args) => _OnWebTWAINDllDownloadFailure.call({ Dynamsoft: Dynamsoft }, ...args);
+  }
+  mountDWT(UseService?: boolean): Promise<any> {
+    this._DWObject = null;
     return new Promise((res, rej) => {
       let dwtInitialConfig: DWTInitialConfig = {
         WebTwainId: "dwtObject"
       };
+      /**
+       * [Why checkScript()?]
+       * Dynamic Web TWAIN relies on a few extra scripts to work correct.
+       * Therefore we must make sure these files are ready before creating a WebTwain instance.
+       */
       let checkScript = () => {
         if (Dynamsoft.Lib.detect.scriptLoaded) {
-          /**
-           * UseService only makes sense on desktop OS
-           */
+          this.modulizeInstallJS();
           if (UseService !== undefined)
             Dynamsoft.WebTwainEnv.UseLocalService = UseService;
           else {
             Dynamsoft.WebTwainEnv.UseLocalService = this.bUseService;
           }
           this.bWASM = this.runningEnvironment.bMobile || !Dynamsoft.WebTwainEnv.UseLocalService;
+          /**
+           * The Camera Addon only works for Service mode on Desktop at present (dwt@16.0.0)
+           */
           this.bCameraAddonUsable = !this.bWASM && this.runningEnvironment.bWin;
-          this.modulizeInstallJS();
           Dynamsoft.WebTwainEnv.CreateDWTObjectEx(
             dwtInitialConfig,
             (_DWObject) => {
               this._DWObject = _DWObject;
+              /**
+               * The event OnBitmapChanged is used here for monitoring the image buffer.
+               */
               this._DWObject.RegisterEvent("OnBitmapChanged", (changedIndexArray, operationType, changedIndex, imagesCount) => {
                 switch (operationType) {
-                  //type: 1-Append(after index), 2-Insert(before index), 3-Remove, 4-Edit(Replace), 5-Index Change
+                  /** reserved space
+                   * type: 1-Append(after index), 2-Insert(before index), 3-Remove, 4-Edit(Replace), 5-Index Change
+                   */
                   case 1: break;
                   case 2: break;
                   case 3: break;
@@ -133,24 +193,36 @@ export class DwtService {
       checkScript();
     });
   }
-  public mountVideoContainer(): Promise<any> {
+  /**
+   * Create an extra WebTwain instance _DWObjectEx
+   * This is used solely for displaying & capturing from a video stream.
+   */
+  mountVideoContainer(): Promise<any> {
+    this._DWObjectEx = null;
     return new Promise((res, rej) => {
-      let dwtInitialConfig: DWTInitialConfig = {
-        WebTwainId: "videoContainer"
-      };
-      Dynamsoft.WebTwainEnv.CreateDWTObjectEx(
-        dwtInitialConfig,
-        (_container) => {
-          this._DWObjectEx = _container;
-          res(_container);
-        },
-        (errorString) => {
-          rej(errorString);
-        }
-      );
+      if (this._DWObject) {
+        let dwtInitialConfig: DWTInitialConfig = {
+          WebTwainId: "videoContainer"
+        };
+        Dynamsoft.WebTwainEnv.CreateDWTObjectEx(
+          dwtInitialConfig,
+          (_container) => {
+            this._DWObjectEx = _container;
+            res(_container);
+          },
+          (errorString) => {
+            rej(errorString);
+          }
+        );
+      } else {
+        rej("Please call mountDWT first!");
+      }
     });
   }
-  public unMountVideoContainer(): Promise<any> {
+  /**
+   * Removes the extra WebTwain instance. Optional.
+   */
+  unMountVideoContainer(): Promise<any> {
     return new Promise((res, rej) => {
       if (Dynamsoft.WebTwainEnv.DeleteDWTObject("videoContainer"))
         res(true);
@@ -158,6 +230,9 @@ export class DwtService {
         rej(false);
     });
   }
+  /**
+   * Retrieve all devices (scanners + cameras).
+   */
   getDevices() {
     let _dwt = this._DWObject;
     if (this._DWObjectEx)
@@ -174,9 +249,16 @@ export class DwtService {
     }
     return this.devices;
   }
+  /**
+   * Retrieve detailed information of the devices.
+   */
   getDeviceDetails() {
     return this._DWObject.GetSourceNames(true);
   }
+  /**
+   * Select a scanner or camera by name.
+   * @param name the name of the device
+   */
   selectADevice(name: string): Promise<boolean> {
     return new Promise((res, rej) => {
       this._selectedDevice = "";
@@ -214,428 +296,10 @@ export class DwtService {
         res(false);
     });
   }
-  acquire(config?: DeviceConfiguration): Promise<any> {
-    return new Promise((res, rej) => {
-      if (this._selectedDevice !== "") {
-        if (this._useCamera) { } else {
-          this._DWObject.SetOpenSourceTimeout(3000);
-          if (this._DWObject.OpenSource()) {
-            this._DWObject.AcquireImage(config, () => {
-              this._DWObject.CloseSource();
-              this._DWObject.CloseWorkingProcess();
-              res(true);
-            }, (errCode, errString) => {
-              rej(errString);
-            });
-            //this._DWObject.startScan(this.setUpScan(this._selectedDevice, config, res, rej));
-          } else {
-            rej(this._DWObject.ErrorString);
-          }
-        }
-      } else {
-        rej("Please select a device first!");
-      }
-    });
-  }
-  capture(): Promise<any> {
-    let _dwt = this._DWObject;
-    if (this._DWObjectEx)
-      _dwt = this._DWObjectEx;
-    return new Promise((res, rej) => {
-      if (this._useCamera) {
-        _dwt.Addon.Webcam.CaptureImage(() => {
-          if (this._DWObjectEx)
-            this.getBlob([0], Dynamsoft.EnumDWT_ImageType.IT_PNG, _dwt)
-              .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
-                _dwt.RemoveImage(0);
-                res(true);
-              }, (errCode, errString) => rej(errString)));
-        }, (errCode, errStr) => rej(errStr));
-      } else {
-        rej("Camera not selected!");
-      }
-    });
-  }
-  load(files?: FileList): Promise<any> {
-    return new Promise((res, rej) => {
-      this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.EnumDWT_ConvertMode.CM_DEFAULT);
-      this._DWObject.Addon.PDF.SetResolution(200);
-      if (this.bWASM && files.length > 0) {
-        for (let i = 0; i < files.length; i++) {
-          this._DWObject.LoadImageFromBinary(files[i], () => { res(true); }, (errCode, errString) => { rej(errString); })
-        }
-      } else {
-        let filter = "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg";
-        if (Dynamsoft.Lib.env.bMac)
-          filter = "TIF,TIFF,JPG,JPEG,PNG,PDF";
-        this._DWObject.IfShowFileDialog = true;
-        this._DWObject.RegisterEvent("OnPostLoad", (
-          directory: string,
-          fileName: string,
-          fileType: DynamsoftEnums.EnumDWT_ImageType) => {
-        });
-        this._DWObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, fileName) => {
-          if (index === filesCount - 1)
-            this._DWObject.LoadImage(directory + "\\" + fileName, () => { res(true); }, (errCode, errStr) => rej(errStr));
-          else
-            this._DWObject.LoadImage(directory + "\\" + fileName, () => { }, (errCode, errStr) => rej(errStr));
-        });
-        this._DWObject.ShowFileDialog(false, filter, 0, "", "", true, false, 0);
-      }
-    });
-  }
-  public modulizeInstallJS() {
-    let _DWT_Reconnect = (<any>window).DWT_Reconnect;
-    (<any>window).DWT_Reconnect = (...args) => _DWT_Reconnect.call({ Dynamsoft: Dynamsoft }, ...args);
-    let __show_install_dialog = (<any>window)._show_install_dialog;
-    (<any>window)._show_install_dialog = (...args) => __show_install_dialog.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainOldPluginNotAllowedCallback = (<any>window).OnWebTwainOldPluginNotAllowedCallback;
-    (<any>window).OnWebTwainOldPluginNotAllowedCallback = (...args) => _OnWebTwainOldPluginNotAllowedCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainNeedUpgradeCallback = (<any>window).OnWebTwainNeedUpgradeCallback;
-    (<any>window).OnWebTwainNeedUpgradeCallback = (...args) => _OnWebTwainNeedUpgradeCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainPreExecuteCallback = (<any>window).OnWebTwainPreExecuteCallback;
-    (<any>window).OnWebTwainPreExecuteCallback = (...args) => _OnWebTwainPreExecuteCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainPostExecuteCallback = (<any>window).OnWebTwainPostExecuteCallback;
-    (<any>window).OnWebTwainPostExecuteCallback = (...args) => _OnWebTwainPostExecuteCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnRemoteWebTwainNotFoundCallback = (<any>window).OnRemoteWebTwainNotFoundCallback;
-    (<any>window).OnRemoteWebTwainNotFoundCallback = (...args) => _OnRemoteWebTwainNotFoundCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnRemoteWebTwainNeedUpgradeCallback = (<any>window).OnRemoteWebTwainNeedUpgradeCallback;
-    (<any>window).OnRemoteWebTwainNeedUpgradeCallback = (...args) => _OnRemoteWebTwainNeedUpgradeCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTWAINDllDownloadFailure = (<any>window).OnWebTWAINDllDownloadFailure;
-    (<any>window).OnWebTWAINDllDownloadFailure = (...args) => _OnWebTWAINDllDownloadFailure.call({ Dynamsoft: Dynamsoft }, ...args);
-  }
-  setUpScan(scanner: string, config: DeviceConfiguration, res, rej): ScanSetup {
-    return {
-      setupId: (new Date()).getTime().toString(),
-      exception: "fail",
-      scanner: scanner,
-      ui: {
-        bShowUI: config.IfShowUI,
-        bShowIndicator: true,
-      },
-      //transferMode: Dynamsoft.EnumDWT_TransferMode.TWSX_FILE,
-      /*fileXfer: {
-        fileName: "E:\\WebTWAIN<%06d>.jpg",
-        fileFormat: Dynamsoft.EnumDWT_FileFormat.TWFF_JP2,
-        jpegQuality: 80,
-        compressionType: Dynamsoft.EnumDWT_CompressionType.TWCP_JPEG
-      }*/
-      // insertingIndex: 0,
-      //profile: string,
-      settings: {
-        exception: "fail",
-        pixelType: (<number>config.PixelType),
-        resolution: config.Resolution,
-        bFeeder: config.IfFeederEnabled,
-        bDuplex: config.IfDuplexEnabled
-      },
-      moreSettings: {
-        exception: "ignore",
-        // bitDepth: 24,
-        pageSize: Dynamsoft.EnumDWT_CapSupportedSizes.TWSS_A4LETTER,
-        unit: Dynamsoft.EnumDWT_UnitType.TWUN_INCHES,
-        /* layout: {
-           left: 50,
-           top: 50,
-           right: 600,
-           bottom: 600
-         },*/
-        pixelFlavor: Dynamsoft.EnumDWT_CapPixelFlavor.TWPF_CHOCOLATE,
-        brightness: 1000,
-        contrast: 1000,
-        nXferCount: 1,
-        autoDiscardBlankPages: true,
-        autoBorderDetection: true,
-        autoDeskew: true,
-        autoBright: true
-      },
-      funcScanStatus: (status) => {
-        console.log(status);
-        if (status.bScanCompleted) {
-          res(true);
-        }
-      },
-      /* outputSetup: {
-         type: "http",
-         format: Dynamsoft.EnumDWT_ImageType.IT_PDF,
-         reTries: 3,
-         useUploader: false,
-         singlePost: true,
-         showProgressBar: true,
-         removeAfterOutput: false,
-         funcHttpUploadStatus: (fileInfo: any) => { console.log(fileInfo) },
-         pdfSetup: {
-           author: "Dynamsoft",
-           compression: Dynamsoft.EnumDWT_PDFCompressionType.PDF_JPEG,
-           creator: "Dynamsoft Support Team",
-           creationDate: 'D:20181231',
-           keyWords: "Angular App",
-           modifiedDate: 'D:20181231',
-           producer: "Dynamic Web TWAIN 16.0",
-           subject: "DWT + Angular Output",
-           title: "Made by Dynamsoft",
-           version: 1.4,
-           quality: 80
-         },
-         tiffSetup: {
-           quality: 80,
-           compression: Dynamsoft.EnumDWT_TIFFCompressionType.TIFF_JPEG,
-            tiffTags: TiffTag[]
-         },
-         httpParams: {
-           url: string,
-           headers: any,
-           formFields: any,
-           maxSizeLimit: number,
-           threads: number,
-           remoteName: string,
-           fileName: string
-         }
-       }*/
-    }
-  }
-  readBarcode(config?: any) {
-    let _index = this._DWObject.CurrentImageIndexInBuffer;
-    if (config && config.index !== undefined) {
-      _index = Math.floor(config.index);
-      if (_index < 0 || _index > this._DWObject.HowManyImagesInBuffer - 1)
-        _index = this._DWObject.CurrentImageIndexInBuffer;
-    }
-    Dynamsoft.Lib.showMask();
-    this._DWObject.Addon.BarcodeReader.getRuntimeSettings()
-      .then(settings => {
-        if (this._DWObject.GetImageBitDepth(_index) === 1) {
-          settings.scaleDownThreshold = 214748347;
-        } else {
-          settings.scaleDownThreshold = 2300;
-        }
-        settings.barcodeFormatIds = Dynamsoft.EnumBarcodeFormat.BF_ALL;
-        if (config) {
-          if (config.formatId) {
-            settings.barcodeFormatIds = config.formatId;
-          } if (config.formatId2) {
-            settings.barcodeFormatIds_2 = config.formatId2;
-          }
-        }
-        // Clear old results before reading again
-        this.barcodeResults = [];
-        settings.region.regionMeasuredByPercentage = 0;
-        if (config && config.zones.length) {
-          let i = 0;
-          let readBarcodeFromRect = () => {
-            i++;
-            settings.region.regionLeft = config.zones[i].x;
-            settings.region.regionTop = config.zones[i].y;
-            settings.region.regionRight = config.zones[i].x + config.zones[i].width;
-            settings.region.regionBottom = config.zones[i].y + config.zones[i].height;
-            if (i === config.zones.length - 1)
-              this.doReadBarode(_index, settings, null);
-            else
-              this.doReadBarode(_index, settings, readBarcodeFromRect);
-          }
-          settings.region.regionLeft = config.zones[0].x;
-          settings.region.regionTop = config.zones[0].y;
-          settings.region.regionRight = config.zones[0].x + config.zones[0].width;
-          settings.region.regionBottom = config.zones[0].y + config.zones[0].height;
-          if (config.zones.length === 1)
-            this.doReadBarode(_index, settings, null);
-          else
-            this.doReadBarode(_index, settings, readBarcodeFromRect);
-        }
-        else {
-          settings.region.regionLeft = 0;
-          settings.region.regionTop = 0;
-          settings.region.regionRight = 0;
-          settings.region.regionBottom = 0;
-          this.doReadBarode(_index, settings, null);
-        }
-      });
-  }
-  doReadBarode(index: number, settings: RuntimeSettings, callback: () => void) {
-    let bHasCallback = !!callback;
-    let outputResults = () => {
-      let resultString = [];
-      if (this.barcodeResults.length === 0) {
-        resultString.push({ text: "--------------------------", type: "seperator" });
-        resultString.push({ text: "Nothing found on the image!", type: "important" });
-        this.barcodeSubject.next(resultString);
-      } else {
-        let allBarcodeResults: TextResults = [];
-        for (let j = 0; j < this.barcodeResults.length; j++) {
-          allBarcodeResults = allBarcodeResults.concat(this.barcodeResults[j]);
-        }
-        resultString.push({ text: "--------------------------", type: "seperator" });
-        resultString.push({ text: "Total barcode(s) found: " + allBarcodeResults.length, type: "important" });
-        for (let i = 0; i < allBarcodeResults.length; ++i) {
-          let result: TextResult = allBarcodeResults[i];
-          resultString.push({ text: "------------------", type: "seperator" });
-          resultString.push({ text: "Barcode " + (i + 1).toString(), type: "nomral" });
-          resultString.push({ text: "Type: " + (result.barcodeFormatString ? result.barcodeFormatString : result.barcodeFormatString_2), type: "nomral" });
-          resultString.push({ text: "Value: " + result.barcodeText, type: "important" });
-        }
-        this.dispalyBarcodeResults();
-        this.barcodeSubject.next(resultString);
-      }
-      this.barcodeSubject.next({ done: true });
-      Dynamsoft.Lib.hideMask();
-    };
-    this._DWObject.Addon.BarcodeReader.updateRuntimeSettings(settings)
-      .then(_ => {
-        let decoderFunc = () => {
-          try {
-            this._DWObject.Addon.BarcodeReader.decode(index)
-              .then(textResults => {
-                this.barcodeResults.push(textResults);
-                bHasCallback ? callback() : outputResults();
-              }, error => {
-                console.log(error);
-                bHasCallback ? callback() : outputResults();
-              });
-          } catch (err) { console.log(err); setTimeout(() => { decoderFunc() }, 1000); }
-        }
-        decoderFunc();
-      });
-  }
-  dispalyBarcodeResults() {
-    this.barcodeRects = { imageIds: [], rects: [] };
-    let results = this.barcodeResults;
-    for (let j = 0; j < results.length; j++) {
-      let eachBarcodeResults: TextResults = results[j];
-      let existingIndex = -1;
-      for (let k = 0; k < this.barcodeRects.imageIds.length; k++) {
-        if (this.barcodeRects.imageIds[k] === eachBarcodeResults.imageid) {
-          existingIndex = k;
-          break;
-        }
-      }
-      let tempRects = [];
-      for (let i = 0; i < eachBarcodeResults.length; ++i) {
-        let result = eachBarcodeResults[i];
-        let loc = result.localizationResult;
-        let left = Math.min(loc.x1, loc.x2, loc.x3, loc.x4);
-        let top = Math.min(loc.y1, loc.y2, loc.y3, loc.y4);
-        let right = Math.max(loc.x1, loc.x2, loc.x3, loc.x4);
-        let bottom = Math.max(loc.y1, loc.y2, loc.y3, loc.y4);
-        tempRects.push({ x: left, y: top, w: right - left, h: bottom - top });
-      }
-      if (existingIndex === -1) {
-        this.barcodeRects.imageIds.push(eachBarcodeResults.imageid);
-        this.barcodeRects.rects.push(tempRects);
-      } else {
-        this.barcodeRects.rects[existingIndex] = this.barcodeRects.rects[existingIndex].concat(tempRects);
-      }
-    }
-    this.barcodeSubject.next(this.barcodeRects);
-  }
-  loadOCRModule(): Promise<any> {
-    return new Promise((res, rej) => {
-      if (Dynamsoft.Lib.product.bHTML5Edition) {
-        if (this._DWObject.Addon.OCR.IsModuleInstalled()) {
-          this.downloadOCRBasic(false)
-            .then(success => res(success), error => rej(error));
-        } else {
-          this.downloadOCRBasic(true)
-            .then(success => res(success), error => rej(error));
-        }
-      }
-      else {
-        rej("OCR not supported in this environment!");
-      }
-    });
-  }
-  downloadOCRBasic(bDownloadDLL: boolean, langPath?: string): Promise<any> {
-    return new Promise((res, rej) => {
-      let strOCRPath = Dynamsoft.WebTwainEnv.ResourcesPath + "/addon/OCRx64.zip";
-      let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
-      if (langPath)
-        strOCRLangPath = langPath;
-      if (bDownloadDLL) {
-        this._DWObject.Addon.OCR.Download(
-          strOCRPath,
-          () => this.downloadOCRBasic(false),
-          (errorCode, errorString) => rej(errorString)
-        );
-      } else {
-        this._DWObject.Addon.OCR.DownloadLangData(
-          strOCRLangPath,
-          () => res(true),
-          (errorCode, errorString) => rej(errorString)
-        );
-      }
-    });
-  }
-  ocr(language: DynamsoftEnums.EnumDWT_OCRLanguage | string, outputFormat: DynamsoftEnums.EnumDWT_OCROutputFormat, zones?: any): Promise<string> {
-    return new Promise((res, rej) => {
-      this._DWObject.Addon.OCR.SetLanguage(language);
-      this._DWObject.Addon.OCR.SetOutputFormat(outputFormat);
-      let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
-      for (let i = 0; i < this.OCRLanguages.length; i++) {
-        if (this.OCRLanguages[i].val === language) {
-          strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/' + this.OCRLanguages[i].desc + '.zip';
-        }
-      }
-      this.downloadOCRBasic(false)
-        .then(
-          () => {
-            this.ocrResultBase64Strings = [];
-            let _index = this._DWObject.CurrentImageIndexInBuffer;
-            let i = 0;
-            if (zones !== undefined && zones.length > 0) {
-              let ocrCallback = (hasError: boolean, errStr?: string) => {
-                if (hasError) {
-                  rej(errStr);
-                } else {
-                  if (i === zones.length) {
-                    res(this.processOCRResult());
-                  } else {
-                    this.doOCR(_index, zones[i], ocrCallback);
-                    i++;
-                  }
-                }
-              };
-              ocrCallback(false);
-            } else
-              this.doOCR(_index, null, (hasError: boolean, errStr?: string) => {
-                if (hasError) {
-                  rej(errStr);
-                } else
-                  res(this.processOCRResult());
-              });
-          },
-          err => rej(err)
-        );
-    });
-  }
-  doOCR(index: number, zone?: any, callback?: (...args) => void): any {
-    if (!!zone && !!callback) {
-      this._DWObject.Addon.OCR.RecognizeRect(
-        index, zone.x, zone.y, zone.x + zone.width, zone.y + zone.height, (imageId, left, top, right, bottom, result) => {
-          this.ocrResultBase64Strings.push(result.Get());
-          callback(false);
-        }, (errCode, errString) => callback(true, errString));
-    } else if (this._DWObject.SelectedImagesIndices.length > 1) {
-      this._DWObject.Addon.OCR.RecognizeSelectedImages((result) => {
-        this.ocrResultBase64Strings.push(result.Get());
-        callback(false);
-      }, (errCode, errString) => callback(true, errString));
-    }
-    else {
-      this._DWObject.Addon.OCR.Recognize(index,
-        (imageId, result) => {
-          this.ocrResultBase64Strings.push(result.Get());
-          callback(false);
-        }, (errCode, errString) => callback(true, errString));
-    }
-  }
-  processOCRResult(): Promise<any> {
-    return new Promise((res, rej) => {
-      if (this.ocrResultBase64Strings.length === 0)
-        rej("No text found!");
-      else {
-        res(this.ocrResultBase64Strings.join(","));
-      }
-    });
-  }
+  /**
+   * Retrieve detailed camera capabilities.
+   * @param _dwt The WebTwain instance.
+   */
   updateCameraValues(_dwt: WebTwain) {
     let mediaTypes = _dwt.Addon.Webcam.GetMediaType(),
       _mediaTypes = [],
@@ -697,6 +361,388 @@ export class DwtService {
     this.cameraOptions["type"] = "cameraOptions";
     this.generalSubject.next(this.cameraOptions);
   }
+  /**
+   * Acquire images (scanner or camera).
+   * @param config Configuration for image aquisition.
+   */
+  acquire(config?: DeviceConfiguration | ScanSetup, bAdvanced?: boolean): Promise<any> {
+    return new Promise((res, rej) => {
+      if (this._selectedDevice !== "") {
+        if (this._useCamera) {
+          if (this._DWObjectEx) {
+            this._DWObjectEx.Addon.Webcam.CaptureImage(() => {
+              this.getBlob([0], Dynamsoft.EnumDWT_ImageType.IT_PNG, this._DWObjectEx)
+                .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
+                  this._DWObjectEx.RemoveImage(0);
+                  res(true);
+                }, (errCode, errString) => rej(errString)));
+            }, (errCode, errStr) => rej(errStr));
+          } else {
+            rej("No WebTwain instanance for camera capture!");
+          }
+        } else {
+          this._DWObject.SetOpenSourceTimeout(3000);
+          if (this._DWObject.OpenSource()) {
+            if (bAdvanced) {
+              this._DWObject.startScan(<ScanSetup>config);
+            } else {
+              this._DWObject.AcquireImage(<DeviceConfiguration>config, () => {
+                this._DWObject.CloseSource();
+                this._DWObject.CloseWorkingProcess();
+                res(true);
+              }, (errCode, errString) => {
+                rej(errString);
+              });
+            }
+          } else {
+            rej(this._DWObject.ErrorString);
+          }
+        }
+      } else {
+        rej("Please select a device first!");
+      }
+    });
+  }
+  /**
+   * Load images by opending a file dialog (either with built-in feature or use a INPUT element).
+   * @param files Files to load.
+   */
+  load(files?: FileList): Promise<any> {
+    return new Promise((res, rej) => {
+      this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.EnumDWT_ConvertMode.CM_DEFAULT);
+      this._DWObject.Addon.PDF.SetResolution(200);
+      if (this.bWASM && files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          this._DWObject.LoadImageFromBinary(files[i], () => { res(true); }, (errCode, errString) => { rej(errString); })
+        }
+      } else {
+        let filter = "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg";
+        if (Dynamsoft.Lib.env.bMac)
+          filter = "TIF,TIFF,JPG,JPEG,PNG,PDF";
+        this._DWObject.IfShowFileDialog = true;
+        this._DWObject.RegisterEvent("OnPostLoad", (
+          directory: string,
+          fileName: string,
+          fileType: DynamsoftEnums.EnumDWT_ImageType) => {
+        });
+        this._DWObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, fileName) => {
+          if (index === filesCount - 1)
+            this._DWObject.LoadImage(directory + "\\" + fileName, () => { res(true); }, (errCode, errStr) => rej(errStr));
+          else
+            this._DWObject.LoadImage(directory + "\\" + fileName, () => { }, (errCode, errStr) => rej(errStr));
+        });
+        this._DWObject.ShowFileDialog(false, filter, 0, "", "", true, false, 0);
+      }
+    });
+  }
+  /**
+   * Filter zones for the current image.
+   * @param zones Original zones.
+   */
+  filterZones(index: number, zones: Zone[]): Zone[] {
+    if (zones !== undefined && zones.length > 0) {
+      for (let i = 0; i < zones.length; i++) {
+        if (zones[i].index !== index)
+          zones.splice(i, 1);
+      }
+      return zones;
+    }
+    return [];
+  }
+  /**
+   * Read barcode off the current image.
+   * @param config Configuration for the read.
+   */
+  readBarcode(config?: any) {
+    let _index = this._DWObject.CurrentImageIndexInBuffer;
+    if (config && config.index !== undefined) {
+      _index = Math.floor(config.index);
+      if (_index < 0 || _index > this._DWObject.HowManyImagesInBuffer - 1)
+        _index = this._DWObject.CurrentImageIndexInBuffer;
+    }
+    Dynamsoft.Lib.showMask();
+    this._DWObject.Addon.BarcodeReader.getRuntimeSettings()
+      .then(settings => {
+        if (this._DWObject.GetImageBitDepth(_index) === 1) {
+          settings.scaleDownThreshold = 214748347;
+        } else {
+          settings.scaleDownThreshold = 2300;
+        }
+        settings.barcodeFormatIds = Dynamsoft.EnumBarcodeFormat.BF_ALL;
+        if (config) {
+          if (config.formatId) {
+            settings.barcodeFormatIds = config.formatId;
+          }
+          if (config.formatId2) {
+            settings.barcodeFormatIds_2 = config.formatId2;
+          }
+          if (config.zones)
+            config.zones = this.filterZones(_index, config.zones);
+        }
+        // Clear old results before reading again
+        this.barcodeResults = [];
+        settings.region.regionMeasuredByPercentage = 0;
+
+        if (config && config.zones && config.zones.length > 0) {
+          let i = 0;
+          let readBarcodeFromRect = () => {
+            i++;
+            settings.region.regionLeft = config.zones[i].x;
+            settings.region.regionTop = config.zones[i].y;
+            settings.region.regionRight = config.zones[i].x + config.zones[i].width;
+            settings.region.regionBottom = config.zones[i].y + config.zones[i].height;
+            if (i === config.zones.length - 1)
+              this.doReadBarode(_index, settings, null);
+            else
+              this.doReadBarode(_index, settings, readBarcodeFromRect);
+          }
+          settings.region.regionLeft = config.zones[0].x;
+          settings.region.regionTop = config.zones[0].y;
+          settings.region.regionRight = config.zones[0].x + config.zones[0].width;
+          settings.region.regionBottom = config.zones[0].y + config.zones[0].height;
+          if (config.zones.length === 1)
+            this.doReadBarode(_index, settings, null);
+          else
+            this.doReadBarode(_index, settings, readBarcodeFromRect);
+        }
+        else {
+          settings.region.regionLeft = 0;
+          settings.region.regionTop = 0;
+          settings.region.regionRight = 0;
+          settings.region.regionBottom = 0;
+          this.doReadBarode(_index, settings, null);
+        }
+      });
+  }
+  /**
+   * Actual barcode reading...
+   * @param index The index of the image to read.
+   * @param settings RuntimeSettings for the read.
+   * @param callback Callback for the read.
+   */
+  doReadBarode(index: number, settings: RuntimeSettings, callback: () => void) {
+    let bHasCallback = !!callback;
+    let outputResults = () => {
+      let resultString = [];
+      if (this.barcodeResults.length === 0) {
+        resultString.push({ text: "--------------------------", type: "seperator" });
+        resultString.push({ text: "Nothing found on the image!", type: "important" });
+        this.barcodeSubject.next(resultString);
+      } else {
+        let allBarcodeResults: TextResults = [];
+        for (let j = 0; j < this.barcodeResults.length; j++) {
+          allBarcodeResults = allBarcodeResults.concat(this.barcodeResults[j]);
+        }
+        resultString.push({ text: "--------------------------", type: "seperator" });
+        resultString.push({ text: "Total barcode(s) found: " + allBarcodeResults.length, type: "important" });
+        for (let i = 0; i < allBarcodeResults.length; ++i) {
+          let result: TextResult = allBarcodeResults[i];
+          resultString.push({ text: "------------------", type: "seperator" });
+          resultString.push({ text: "Barcode " + (i + 1).toString(), type: "nomral" });
+          resultString.push({ text: "Type: " + (result.barcodeFormatString ? result.barcodeFormatString : result.barcodeFormatString_2), type: "nomral" });
+          resultString.push({ text: "Value: " + result.barcodeText, type: "important" });
+        }
+        this.returnBarcodeRects();
+        this.barcodeSubject.next(resultString);
+      }
+      this.barcodeSubject.next({ done: true });
+      Dynamsoft.Lib.hideMask();
+    };
+    this._DWObject.Addon.BarcodeReader.updateRuntimeSettings(settings)
+      .then(_ => {
+        let decoderFunc = () => {
+          try {
+            this._DWObject.Addon.BarcodeReader.decode(index)
+              .then(textResults => {
+                this.barcodeResults.push(textResults);
+                bHasCallback ? callback() : outputResults();
+              }, error => {
+                console.log(error);
+                bHasCallback ? callback() : outputResults();
+              });
+          } catch (err) { console.log(err); setTimeout(() => { decoderFunc() }, 1000); }
+        }
+        decoderFunc();
+      });
+  }
+  /**
+   * Calculate and return the rects of the barcodes (coordinates to indicate where they are located).
+   */
+  returnBarcodeRects() {
+    this.barcodeRects = { imageIds: [], rects: [] };
+    let results = this.barcodeResults;
+    for (let j = 0; j < results.length; j++) {
+      let eachBarcodeResults: TextResults = results[j];
+      let existingIndex = -1;
+      for (let k = 0; k < this.barcodeRects.imageIds.length; k++) {
+        if (this.barcodeRects.imageIds[k] === eachBarcodeResults.imageid) {
+          existingIndex = k;
+          break;
+        }
+      }
+      let tempRects = [];
+      for (let i = 0; i < eachBarcodeResults.length; ++i) {
+        let result = eachBarcodeResults[i];
+        let loc = result.localizationResult;
+        let left = Math.min(loc.x1, loc.x2, loc.x3, loc.x4);
+        let top = Math.min(loc.y1, loc.y2, loc.y3, loc.y4);
+        let right = Math.max(loc.x1, loc.x2, loc.x3, loc.x4);
+        let bottom = Math.max(loc.y1, loc.y2, loc.y3, loc.y4);
+        tempRects.push({ x: left, y: top, w: right - left, h: bottom - top });
+      }
+      if (existingIndex === -1) {
+        this.barcodeRects.imageIds.push(eachBarcodeResults.imageid);
+        this.barcodeRects.rects.push(tempRects);
+      } else {
+        this.barcodeRects.rects[existingIndex] = this.barcodeRects.rects[existingIndex].concat(tempRects);
+      }
+    }
+    this.barcodeSubject.next(this.barcodeRects);
+  }
+  /**
+   * loadOCRModule & downloadOCRBasic prepare resources for the OCR module.
+   */
+  loadOCRModule(): Promise<any> {
+    return new Promise((res, rej) => {
+      if (Dynamsoft.Lib.product.bHTML5Edition) {
+        if (this._DWObject.Addon.OCR.IsModuleInstalled()) {
+          this.downloadOCRBasic(false)
+            .then(
+              success =>
+                res(success),
+              error =>
+                rej(error)
+            );
+        } else {
+          this.downloadOCRBasic(true)
+            .then(
+              success =>
+                res(success),
+              error =>
+                rej(error)
+            );
+        }
+      }
+      else {
+        rej("OCR not supported in this environment!");
+      }
+    });
+  }
+  downloadOCRBasic(bDownloadDLL: boolean, langPath?: string): Promise<any> {
+    return new Promise((res, rej) => {
+      let strOCRPath = Dynamsoft.WebTwainEnv.ResourcesPath + "/addon/OCRx64.zip";
+      let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
+      if (langPath)
+        strOCRLangPath = langPath;
+      if (bDownloadDLL) {
+        this._DWObject.Addon.OCR.Download(
+          strOCRPath,
+          () => this.downloadOCRBasic(false),
+          (errorCode, errorString) => rej(errorString)
+        );
+      } else {
+        this._DWObject.Addon.OCR.DownloadLangData(
+          strOCRLangPath,
+          () => res(true),
+          (errorCode, errorString) => rej(errorString)
+        );
+      }
+    });
+  }
+  /**
+   * Prepararation for the OCR.
+   * @param language The target language.
+   * @param outputFormat The output format.
+   * @param zones Zones to read.
+   */
+  ocr(language: DynamsoftEnums.EnumDWT_OCRLanguage | string, outputFormat: DynamsoftEnums.EnumDWT_OCROutputFormat, zones?: Zone[]): Promise<string> {
+    let _index = this._DWObject.CurrentImageIndexInBuffer;
+    if (zones) zones = this.filterZones(_index, zones);
+    return new Promise((res, rej) => {
+      this._DWObject.Addon.OCR.SetLanguage(language);
+      this._DWObject.Addon.OCR.SetOutputFormat(outputFormat);
+      let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
+      for (let i = 0; i < this.OCRLanguages.length; i++) {
+        if (this.OCRLanguages[i].val === language) {
+          strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/' + this.OCRLanguages[i].desc + '.zip';
+        }
+      }
+      this.downloadOCRBasic(false)
+        .then(
+          () => {
+            this.ocrResultBase64Strings = [];
+            let i = 0;
+            if (zones !== undefined && zones.length > 0) {
+              let ocrCallback = (hasError: boolean, errStr?: string) => {
+                if (hasError) {
+                  rej(errStr);
+                } else {
+                  if (i === zones.length) {
+                    res(this.processOCRResult());
+                  } else {
+                    this.doOCR(_index, zones[i], ocrCallback);
+                    i++;
+                  }
+                }
+              };
+              ocrCallback(false);
+            } else
+              this.doOCR(_index, null, (hasError: boolean, errStr?: string) => {
+                if (hasError) {
+                  rej(errStr);
+                } else
+                  res(this.processOCRResult());
+              });
+          },
+          err => rej(err)
+        );
+    });
+  }
+  /**
+   * Actual OCR.
+   * @param index Specify the image to read.
+   * @param zone Specify a Zone.
+   * @param callback Callback after the read.
+   */
+  doOCR(index: number, zone?: any, callback?: (...args) => void): any {
+    if (!!zone && !!callback) {
+      this._DWObject.Addon.OCR.RecognizeRect(
+        index, zone.x, zone.y, zone.x + zone.width, zone.y + zone.height, (imageId, left, top, right, bottom, result) => {
+          this.ocrResultBase64Strings.push(result.Get());
+          callback(false);
+        }, (errCode, errString) => callback(true, errString));
+    } else if (this._DWObject.SelectedImagesIndices.length > 1) {
+      this._DWObject.Addon.OCR.RecognizeSelectedImages((result) => {
+        this.ocrResultBase64Strings.push(result.Get());
+        callback(false);
+      }, (errCode, errString) => callback(true, errString));
+    }
+    else {
+      this._DWObject.Addon.OCR.Recognize(index,
+        (imageId, result) => {
+          this.ocrResultBase64Strings.push(result.Get());
+          callback(false);
+        }, (errCode, errString) => callback(true, errString));
+    }
+  }
+  /**
+   * Process OCR result.
+   */
+  processOCRResult(): Promise<any> {
+    return new Promise((res, rej) => {
+      if (this.ocrResultBase64Strings.length === 0)
+        rej("No text found!");
+      else {
+        res(this.ocrResultBase64Strings.join(","));
+      }
+    });
+  }
+  /**
+   * Convert image(s) to a Blob.
+   * @param indices Specify the image(s).
+   * @param type Specify the type of the Blob.
+   * @param dwt Specify the WebTwain instance doing the job.
+   */
   getBlob(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
       let _dwt = this._DWObject;
@@ -713,6 +759,12 @@ export class DwtService {
       });
     });
   }
+  /**
+   * Convert image(s) to a Base64 string.
+   * @param indices Specify the image(s).
+   * @param type Specify the type of the Base64 string.
+   * @param dwt Specify the WebTwain instance doing the job.
+   */
   getBase64(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
       let _dwt = this._DWObject;
@@ -743,6 +795,10 @@ export class DwtService {
       });
     });
   }
+  /**
+   * Return the extention string of the specified image type.
+   * @param type The image type (number).
+   */
   getExtension(type: DynamsoftEnums.EnumDWT_ImageType) {
     switch (type) {
       case 0: return ".bmp";
@@ -753,6 +809,10 @@ export class DwtService {
       default: return ".unknown";
     }
   }
+  /**
+   * Return the file filter for the save-file dialog based on the image type.
+   * @param type The image type (number).
+   */
   getDialogFilter(type: DynamsoftEnums.EnumDWT_ImageType): string {
     let filter = "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg";
     switch (type) {
@@ -776,7 +836,14 @@ export class DwtService {
     }
     return filter;
   }
-  saveLocally(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, fileName: string, showDialog: boolean, dwt?: WebTwain): Promise<any> {
+  /**
+   * Saved the specified images locally.
+   * @param indices Specify the image(s).
+   * @param type Specify the type of the target file.
+   * @param fileName Specify the file name.
+   * @param showDialog Specify whether to show a saving dialog.
+   */
+  saveLocally(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, fileName: string, showDialog: boolean): Promise<any> {
     return new Promise((res, rej) => {
       let saveInner = (_path, _name, _type): Promise<any> => {
         return new Promise((res, rej) => {
@@ -820,7 +887,13 @@ export class DwtService {
       }
     });
   }
-  uploadToServer(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, fileName: string, dwt?: WebTwain): Promise<any> {
+  /**
+   * Upload the specified images to the server.
+   * @param indices Specify the image(s).
+   * @param type Specify the type of the target file.
+   * @param fileName Specify the file name.
+   */
+  uploadToServer(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, fileName: string): Promise<any> {
     return new Promise((res, rej) => {
       fileName = fileName + this.getExtension(type);
       let url = "", savedDir = "";
@@ -865,4 +938,12 @@ export interface Device {
   name: string,
   realName: string,
   type: string
+}
+
+interface Zone {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  index: number;
 }

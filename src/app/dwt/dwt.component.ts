@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { DwtService, Device } from './../dwt.service';
 import { WebTwain } from 'dwt/WebTwain';
 import { BasicViewerConfig } from 'dwt/WebTwain.Viewer';
@@ -11,50 +11,71 @@ import { NgbModal, NgbModalRef, ModalDismissReasons, } from '@ng-bootstrap/ng-bo
   templateUrl: './dwt.component.html',
   styleUrls: ['./dwt.component.css']
 })
-export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
+export class DwtComponent implements OnInit, OnDestroy {
   @Input() events: Observable<void>;
 
+  /**
+   * Variable that refer to the open modal dialog.
+   */
   private modalRef: NgbModalRef;
+  /**
+   * A few subscriptions and observables to get information from dwt.service
+   */
   private eventsSubscription: Subscription;
   private barcodeReadingSubscription: Subscription;
   private bufferSubscription: Subscription;
+  private bufferObservable: Observable<string>;
   private generalSubscription: Subscription;
-
+  /**
+   * Two WebTwain objects doing all the job.
+   */
   protected DWObject: WebTwain = null;
   protected VideoContainer: WebTwain = null;
-  protected basicView: BasicViewerConfig;
-
-  public barcodeResult: Observable<any>;
-  public bufferObservable: Observable<string>;
+  /**
+   * Global variables and status flags.
+   */
+  public bWASM = false;
+  public dwtMounted = false;
+  public bMobile: boolean;
+  public bCameraAddonUsable: boolean;
+  public containerId = "dwtcontrolContainer";
+  public videoContainerId = "videoContainer";
+  public editorShown = false;
+  public devices: Device[];
+  public deviceName: string = "Choose...";
+  public basicView: BasicViewerConfig;
   public emptyBuffer: boolean = true;
-  public barcodeRects: any
-  public barcodeRectsOnCurrentImage: Array<BarcodeRectToShow> = [];
+  public zones: Zone[] = [];
   public mainViewerPos = { x: 0, y: 0 };
+  public videoPlaying: boolean = false;
+  public showVideoText: string = "Show Video";
+  public instantError: string = "There is no image in buffer!";
+  public outputMessages: Message[] = [];
+  public historyMessages: Message[] = [];
+  public bDontScrollMessages: boolean = true;
+  /**
+   * For OCR.
+   */
   public ocrReady: boolean = false;
   public ocrResultString: string = "";
   public ocrResultFiles: File[] = [];
   public ocrResultURLs: string[] = [];
   public ocrButtonText = "Recognize";
+  /**
+   * For Barcode Reading.
+   */
+  public barcodeResult: Observable<any>;
+  public barcodeRects: any
+  public barcodeRectsOnCurrentImage: Array<BarcodeRectToShow> = [];
   public barcodeButtonText = "Read";
-  public bWASM = false;
-  public dwtMounted = false;
-  public containerId = "dwtcontrolContainer";
-  public videoContainerId = "videoContainer";
-  public editorShown = false;
-  public deviceName: string = "Choose...";
-  public bMobile: boolean;
-  public bCameraAddonUsable: boolean;
+  /**
+   * Buffer info
+   */
   public current: 0;
   public count: 0;
-  public controlType: string = "";
-  public devices: Device[];
-  public videoPlaying: boolean = false;
-  public showVideoText: string = "Show Video";
-  public zones: Zone[] = [];
-  public instantError: string = "There is no image in buffer!";
-  public outputMessages: Message[] = [];
-  public historyMessages: Message[] = [];
-  public bDontScrollMessages: boolean = true;
+  /**
+   * Options.
+   */
   public formatsToImport = {
     JPG: true,
     PNG: true,
@@ -78,8 +99,6 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
   public currentItem = "";
   public showRangePicker = false;
   public rangePicker = null;
-  public OCRLanguages = [];
-  public OCROutputFormats = [];
   public barcodeReaderOptions = {
     Symbologies: {
       All: true,
@@ -99,6 +118,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
     showRects: true,
     rectShowingTime: 5
   };
+  public OCRLanguages = [];
+  public OCROutputFormats = [];
   public ocrOptions = {
     Language: "eng",
     OutputFormat: "0"
@@ -119,28 +140,14 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
     savedFiles: [],
     uploadedFiles: [],
     base64ButtonText: [],
-    saveFileText: []
+    saveFileText: [],
+    blobToShow: null
   }
-  constructor(protected dwtService: DwtService, private modalService: NgbModal,) {
+  constructor(protected dwtService: DwtService, private modalService: NgbModal) {
     this.initDWT();
     this.bMobile = this.dwtService.runningEnvironment.bMobile;
     this.OCRLanguages = this.dwtService.OCRLanguages;
     this.OCROutputFormats = this.dwtService.OCROutputFormats;
-  }
-  isScannerFilter(device: Device) {
-    return device.type === "scanner";
-  }
-  isCameraFilter(device: Device) {
-    return device.type === "camera";
-  }
-  toggleCheckAll() {
-    let _symbologies = this.barcodeReaderOptions.Symbologies;
-    for (let key in _symbologies) {
-      if (_symbologies.hasOwnProperty(key)) {
-        if (key !== "All")
-          _symbologies[key] = !_symbologies["All"];
-      }
-    }
   }
   ngOnInit() {
     this.eventsSubscription = this.events.subscribe(
@@ -182,7 +189,9 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
         switch (bufferStatus) {
           default: break;
           case "empty": this.emptyBuffer = true; break;
-          case "changed": this.barcodeRectsOnCurrentImage = []; break;
+          case "changed": this.barcodeRectsOnCurrentImage = [];
+            this.zones = [];
+            break;
         }
         if (this.emptyBuffer) {
           this.instantError = "There is no image in buffer!";
@@ -220,6 +229,27 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
         }
       }
     );
+  }
+  ngOnDestroy() {
+    this.eventsSubscription.unsubscribe();
+  }
+  /**
+   * Supporting functions.
+   */
+  isScannerFilter(device: Device) {
+    return device.type === "scanner";
+  }
+  isCameraFilter(device: Device) {
+    return device.type === "camera";
+  }
+  toggleCheckAll() {
+    let _symbologies = this.barcodeReaderOptions.Symbologies;
+    for (let key in _symbologies) {
+      if (_symbologies.hasOwnProperty(key)) {
+        if (key !== "All")
+          _symbologies[key] = !_symbologies["All"];
+      }
+    }
   }
   showRects() {
     // Clear rects
@@ -263,9 +293,6 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
       }
     }
   }
-  ngOnDestroy() {
-    this.eventsSubscription.unsubscribe();
-  }
   updateViewer() {
     this.basicView = {
       Height: "100%",
@@ -298,6 +325,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
       view: { bShow: true, Width: "80%" }
     }
     if (this.DWObject.BindViewer(this.containerId, this.basicView)) {
+      // Remove the context menu which is still not functioning correctly.
+      this.DWObject.Viewer.off('imageRightClick');
       this.DWObject.RegisterEvent('OnImageAreaSelected', (nImageIndex, left, top, right, bottom, sAreaIndex) => {
         this.instantError = "";
         if (sAreaIndex > this.zones.length + 1) {
@@ -358,6 +387,7 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
   initDWT(): void {
+    this.DWObject = null;
     this.dwtService.mountDWT()
       .then(
         obj => {
@@ -374,8 +404,6 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
           }, 0);
         },
         err => this.instantError = err);
-  }
-  ngAfterViewInit(): void {
   }
   openModal(content, type?: string) {
     this.modalRef = this.modalService.open(content, {
@@ -432,7 +460,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
         savedFiles: [],
         uploadedFiles: [],
         base64ButtonText: [],
-        saveFileText: []
+        saveFileText: [],
+        blobToShow: null
       };
     });
     if (this.instantError !== "There is no image in buffer!")
@@ -471,7 +500,9 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
         this.dwtService.loadOCRModule()
           .then(() => {
             this.ocrReady = true;
-          }, err => this.instantError = err);
+          }, err =>
+            this.instantError = err
+          );
         break;
       case "save":
         let selectedIndices = this.DWObject.SelectedImagesIndices;
@@ -506,8 +537,12 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
   acquireFromCamera() {
-    this.dwtService.capture()
-      .then(_ => { this.instantError = "Captured successfully!" }, err => this.instantError = err);
+    this.dwtService.acquire()
+      .then(_ => {
+        this.instantError = "Captured successfully!"; setTimeout(() => {
+          this.instantError = "";
+        }, 3000);
+      }, err => this.instantError = err);
   }
   scan() {
     this.dwtService.acquire(this.scanOptions)
@@ -543,6 +578,8 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
   doOCR() {
+    this.ocrResultFiles = [];
+    this.ocrResultURLs = [];
     this.ocrButtonText = "Recognizing";
     if (this.instantError !== "There is no image in buffer!")
       this.instantError = "";
@@ -781,7 +818,6 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
   }
   copyBase64String(indexOfString) {
     if (navigator.clipboard) {
-      navigator.clipboard.addEventListener
       if (this.saveResults.base64String[indexOfString] === "")
         this.instantError = "No resulting String!";
       navigator.clipboard.writeText(this.saveResults.base64String[indexOfString])
@@ -798,7 +834,6 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
   }
   copyFilePath(indexOfString) {
     if (navigator.clipboard) {
-      navigator.clipboard.addEventListener
       if (this.saveResults.saveFileText[indexOfString] === "")
         this.instantError = "No resulting String!";
       navigator.clipboard.writeText(this.saveResults.savedFiles[indexOfString].path)
@@ -959,6 +994,16 @@ export class DwtComponent implements AfterViewInit, OnInit, OnDestroy {
         }
         break;
       default: break;
+    }
+  }
+  copyURLToShow(url) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+        .then(_ => {
+          this.instantError = "URL of the blob copied, try paste it in another tab to view the blob!";
+        });
+    } else {
+      this.instantError = "Can not use the clipboard! Please use HTTPS.";
     }
   }
 }
