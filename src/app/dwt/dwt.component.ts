@@ -2,7 +2,7 @@ import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { DwtService, Device } from './../dwt.service';
 import { WebTwain } from 'dwt/WebTwain';
 import { BasicViewerConfig } from 'dwt/WebTwain.Viewer';
-import { Subscription, Observable } from 'rxjs';
+import { Subscription, Observable, empty } from 'rxjs';
 import Dynamsoft from 'dwt';
 import { NgbModal, NgbModalRef, ModalDismissReasons, } from '@ng-bootstrap/ng-bootstrap';
 
@@ -194,8 +194,8 @@ export class DwtComponent implements OnInit, OnDestroy {
             break;
         }
         if (this.emptyBuffer) {
-          this.instantError = "There is no image in buffer!";
-        } else { this.instantError = "" }
+          this.showMessage("There is no image in buffer!");
+        } else { this.clearMessage() }
       }
     );
     this.generalSubscription = this.dwtService.generalSubject.subscribe(
@@ -232,6 +232,18 @@ export class DwtComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy() {
     this.eventsSubscription.unsubscribe();
+    this.bufferSubscription.unsubscribe();
+    this.generalSubscription.unsubscribe();
+    this.barcodeReadingSubscription.unsubscribe();
+    this.dwtService.unMountDWT().then(
+      _ =>
+        this.dwtService.unMountVideoContainer());
+  }
+  clearMessage() {
+    this.instantError = "";
+  }
+  showMessage(msg: string) {
+    this.instantError = msg;
   }
   /**
    * Supporting functions.
@@ -285,7 +297,7 @@ export class DwtComponent implements OnInit, OnDestroy {
           let top = topBase + rect.y * zoom;
           let width = rect.w * zoom;
           let height = rect.h * zoom;
-          //  this.instantError = "x: " + rect.x + " y: " + rect.y + " w: " + rect.w + ", h: " + rect.h;
+          //this.showMessage("x: " + rect.x + " y: " + rect.y + " w: " + rect.w + ", h: " + rect.h);
           //this.DWObject.OverlayRectangle(currentIndex, rect.x, rect.y, rect.x + rect.w, rect.y + rect.h, 0xfe8e14, 0.5);
           this.barcodeRectsOnCurrentImage.push({ x: left, y: top, w: width, h: height });
         }
@@ -310,11 +322,11 @@ export class DwtComponent implements OnInit, OnDestroy {
       while (container.firstChild) {
         container.removeChild(container.lastChild);
       }
-      if (this.instantError !== "There is no image in buffer!")
-        this.instantError = "";
+      if (!this.emptyBuffer)
+        this.clearMessage();
       return true;
     } else {
-      this.instantError = this.DWObject.ErrorString;
+      this.showMessage(this.DWObject.ErrorString);
       return false;
     }
   }
@@ -328,9 +340,9 @@ export class DwtComponent implements OnInit, OnDestroy {
       // Remove the context menu which is still not functioning correctly.
       this.DWObject.Viewer.off('imageRightClick');
       this.DWObject.RegisterEvent('OnImageAreaSelected', (nImageIndex, left, top, right, bottom, sAreaIndex) => {
-        this.instantError = "";
+        this.clearMessage();
         if (sAreaIndex > this.zones.length + 1) {
-          this.instantError = "Impossible Area selected!";
+          this.showMessage("Impossible Area selected!");
           return;
         }
         if (this.zones.length + 1 === sAreaIndex)
@@ -339,7 +351,7 @@ export class DwtComponent implements OnInit, OnDestroy {
           this.zones.splice(sAreaIndex - 1, 1, { x: left, y: top, width: right - left, height: bottom - top, index: nImageIndex });
       });
       this.DWObject.RegisterEvent('OnImageAreaDeSelected', () => {
-        this.instantError = ""; this.zones = [];
+        this.clearMessage(); this.zones = [];
       });
       this.bMobile ? this.DWObject.Viewer.operationMode = 0 : this.DWObject.Viewer.operationMode = 1;
       this.DWObject.Viewer.showFooter = false;
@@ -365,9 +377,9 @@ export class DwtComponent implements OnInit, OnDestroy {
         this.formatsToImport.PDF ? filters.push("application/pdf") : false;
         if (filters.length > 0) {
           filter = filters.join(",");
-          this.instantError = "";
+          this.clearMessage();
         } else {
-          this.instantError = "Please select at least one format!";
+          this.showMessage("Please select at least one format!");
           return false;
         }
         WASMInput.setAttribute("accept", filter);
@@ -398,12 +410,12 @@ export class DwtComponent implements OnInit, OnDestroy {
           this.dwtService.mountVideoContainer()
             .then(containerDWT => {
               this.VideoContainer = containerDWT;
-            }, err => this.instantError = err);
+            }, err => this.showMessage(err));
           setTimeout(() => {
             this.bindViewer();
           }, 0);
         },
-        err => this.instantError = err);
+        err => this.showMessage(err));
   }
   openModal(content, type?: string) {
     this.modalRef = this.modalService.open(content, {
@@ -418,7 +430,7 @@ export class DwtComponent implements OnInit, OnDestroy {
             if (this.bWASM)
               return true;
             if (this.videoPlaying) {
-              this.instantError = "Please Stop Video first!";
+              this.showMessage("Please stop video first!");
               return false;
             } else {
               this.deviceName = "Choose...";
@@ -453,6 +465,8 @@ export class DwtComponent implements OnInit, OnDestroy {
     });
     this.modalRef.result.then((result) => {//close
     }, (reason) => {//dismiss, reset modal dialogs
+      if (this.emptyBuffer)
+        this.showMessage("There is no image in buffer!");
       this.saveResults = {
         blob: [],
         blobURL: [],
@@ -464,15 +478,13 @@ export class DwtComponent implements OnInit, OnDestroy {
         blobToShow: null
       };
     });
-    if (this.instantError !== "There is no image in buffer!")
-      this.instantError = "";
     switch (type) {
       case "camera":
         let makeSureDIVExists = () => {
           let container = <HTMLDivElement>document.getElementById(this.videoContainerId);
           if (container) {
             if (this.VideoContainer === null) {
-              this.instantError = "No Video Container!";
+              this.showMessage("No Video Container!");
               return;
             }
             container.style.height = "100%";
@@ -487,13 +499,18 @@ export class DwtComponent implements OnInit, OnDestroy {
         };
         makeSureDIVExists();
       case "acquire":
+        this.clearMessage();
         this.devices = this.dwtService.getDevices();
         this.deviceName = "Choose...";
         break;
       case "barcode":
+        if (!this.emptyBuffer)
+          this.clearMessage();
         this.barcodeReaderOptions.showRects = true;
         break;
       case "ocr":
+        if (!this.emptyBuffer)
+          this.clearMessage();
         if (this.bMobile) return;
         this.ocrResultString = "";
         this.ocrButtonText = "Recognize";
@@ -501,10 +518,12 @@ export class DwtComponent implements OnInit, OnDestroy {
           .then(() => {
             this.ocrReady = true;
           }, err =>
-            this.instantError = err
+            this.showMessage(err)
           );
         break;
       case "save":
+        if (!this.emptyBuffer)
+          this.clearMessage();
         let selectedIndices = this.DWObject.SelectedImagesIndices;
         let count = this.DWObject.HowManyImagesInBuffer;
         for (let i = 0; i < count; i++)
@@ -525,8 +544,8 @@ export class DwtComponent implements OnInit, OnDestroy {
       return;
     this.dwtService.selectADevice(this.deviceName)
       .then(
-        done => done ? this.instantError = "" : this.instantError = "Device selecting failed!",
-        error => typeof error === "string" ? this.instantError = error : this.instantError = "Device selecting failed!");
+        done => done ? this.clearMessage() : this.showMessage("Device selecting failed!"),
+        error => typeof error === "string" ? this.showMessage(error) : this.showMessage("Device selecting failed!"));
   }
   acquire() {
     if (this.dwtService.bWASM) {
@@ -539,26 +558,26 @@ export class DwtComponent implements OnInit, OnDestroy {
   acquireFromCamera() {
     this.dwtService.acquire()
       .then(_ => {
-        this.instantError = "Captured successfully!"; setTimeout(() => {
-          this.instantError = "";
+        this.showMessage("Captured successfully!"); setTimeout(() => {
+          this.clearMessage();
         }, 3000);
-      }, err => this.instantError = err);
+      }, err => this.showMessage(err));
   }
   scan() {
     this.dwtService.acquire(this.scanOptions)
       .then(() => {
         this.closeModal(true);
-        if (this.instantError !== "There is no image in buffer!")
-          this.instantError = "";
-      }, err => this.instantError = err);
+        if (!this.emptyBuffer)
+          this.clearMessage();
+      }, err => this.showMessage(err));
   }
   load() {
     this.dwtService.load()
       .then(() => {
         this.closeModal(true);
-        if (this.instantError !== "There is no image in buffer!")
-          this.instantError = "";
-      }, err => this.instantError = err)
+        if (!this.emptyBuffer)
+          this.clearMessage();
+      }, err => this.showMessage(err));
   }
   showEditor() {
     this.DWObject.ShowImageEditor();
@@ -581,15 +600,15 @@ export class DwtComponent implements OnInit, OnDestroy {
     this.ocrResultFiles = [];
     this.ocrResultURLs = [];
     this.ocrButtonText = "Recognizing";
-    if (this.instantError !== "There is no image in buffer!")
-      this.instantError = "";
+    if (!this.emptyBuffer)
+      this.clearMessage();
     this.ocrResultString = "";
     this.filterZones();
     this.dwtService.ocr(this.ocrOptions.Language, parseInt(this.ocrOptions.OutputFormat), this.zones)
       .then(
         res => {
           this.ocrButtonText = "Done, click to do it again"
-          this.instantError = "";
+          this.clearMessage();
           let resultStrings = res.split(",");
           switch (this.ocrOptions.OutputFormat) {
             case "0" /* TEXT */:
@@ -614,7 +633,7 @@ export class DwtComponent implements OnInit, OnDestroy {
               break;
             default: break;
           }
-        }, err => { this.instantError = err; this.ocrButtonText = "Recognize failed, try again!" }
+        }, err => { this.showMessage(err); this.ocrButtonText = "Recognize failed, try again!" }
       );
   }
   readBarcode() {
@@ -756,7 +775,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     if (this.VideoContainer === null) {
-      this.instantError = "No Video Container!";
+      this.showMessage("No Video Container!");
       return false;
     }
     _dwt.Addon.Webcam.PlayVideo(_dwt, 80, () => {
@@ -819,7 +838,7 @@ export class DwtComponent implements OnInit, OnDestroy {
   copyBase64String(indexOfString) {
     if (navigator.clipboard) {
       if (this.saveResults.base64String[indexOfString] === "")
-        this.instantError = "No resulting String!";
+        this.showMessage("No resulting String!");
       navigator.clipboard.writeText(this.saveResults.base64String[indexOfString])
         .then(_ => {
           this.saveResults.base64ButtonText[indexOfString] = "Copied!";
@@ -829,13 +848,13 @@ export class DwtComponent implements OnInit, OnDestroy {
           }, 3000);
         });
     } else {
-      this.instantError = "Can not use the clipboard! Please use HTTPS.";
+      this.showMessage("Can not use the clipboard! Please use HTTPS.");
     }
   }
   copyFilePath(indexOfString) {
     if (navigator.clipboard) {
       if (this.saveResults.saveFileText[indexOfString] === "")
-        this.instantError = "No resulting String!";
+        this.showMessage("No resulting String!");
       navigator.clipboard.writeText(this.saveResults.savedFiles[indexOfString].path)
         .then(_ => {
           this.saveResults.saveFileText[indexOfString] = "Copied!";
@@ -845,7 +864,7 @@ export class DwtComponent implements OnInit, OnDestroy {
           }, 3000);
         });
     } else {
-      this.instantError = "Can not use the clipboard! Please use HTTPS.";
+      this.showMessage("Can not use the clipboard! Please use HTTPS.");
     }
   }
   handleMultiPageCheck() {
@@ -895,13 +914,13 @@ export class DwtComponent implements OnInit, OnDestroy {
           if (this.saveOptions.multiPage) {
             let selectedIndices = this.DWObject.SelectedImagesIndices;
             this.dwtService.uploadToServer(selectedIndices, this.getImageType(this.saveOptions.outPutFormat), this.saveOptions.fileName)
-              .then(result => { this.saveResults.uploadedFiles.push(result); this.instantError = ""; }, err => this.instantError = err);
+              .then(result => { this.saveResults.uploadedFiles.push(result); this.clearMessage(); }, err => this.showMessage(err));
           }
           else {
             let count = this.DWObject.HowManyImagesInBuffer;
             for (let i = 0; i < count; i++) {
               this.dwtService.uploadToServer([i], this.getImageType(this.saveOptions.outPutFormat), this.saveOptions.fileName + "_" + (i + 1))
-                .then(result => { this.saveResults.uploadedFiles.push(result); this.instantError = ""; }, err => this.instantError = err);
+                .then(result => { this.saveResults.uploadedFiles.push(result); this.clearMessage(); }, err => this.showMessage(err));
             }
           }
         } else {
@@ -914,15 +933,15 @@ export class DwtComponent implements OnInit, OnDestroy {
               .then(result => {
                 this.saveResults.savedFiles.push(result);
                 this.saveResults.saveFileText.push("Copy path for " + result.name);
-                this.instantError = "";
-              }, err => this.instantError = err);
+                this.clearMessage();
+              }, err => this.showMessage(err));
           }
           else {
             let count = this.DWObject.HowManyImagesInBuffer;
             let fileName = this.saveOptions.fileName + "_" + 1;
             this.dwtService.saveLocally([0], this.getImageType(this.saveOptions.outPutFormat), fileName, true)
               .then(result => {
-                this.instantError = "";
+                this.clearMessage();
                 this.saveResults.savedFiles.push(result);
                 this.saveResults.saveFileText.push("Copy path for  " + result.name);
                 /**
@@ -932,12 +951,12 @@ export class DwtComponent implements OnInit, OnDestroy {
                   let fileName = this.saveOptions.fileName + "_" + (i + 1);
                   this.dwtService.saveLocally([i], this.getImageType(this.saveOptions.outPutFormat), fileName, false)
                     .then(result => {
-                      this.instantError = "";
+                      this.clearMessage();
                       this.saveResults.savedFiles.push(result);
                       this.saveResults.saveFileText.push("Copy path for  " + result.name);
-                    }, err => this.instantError = err);
+                    }, err => this.showMessage(err));
                 }
-              }, err => this.instantError = err);
+              }, err => this.showMessage(err));
           }
         }
         break;
@@ -951,8 +970,8 @@ export class DwtComponent implements OnInit, OnDestroy {
               let newFile = new File([blob], "Saved_Blob (" + blob.type + ")", { type: blob.type });
               this.saveResults.blob.push(newFile);
               this.saveResults.blobURL.push(URL.createObjectURL(newFile));
-              this.instantError = "";
-            }, err => this.instantError = err);
+              this.clearMessage();
+            }, err => this.showMessage(err));
         } else {
           let count = this.DWObject.HowManyImagesInBuffer;
           for (let i = 0; i < count; i++) {
@@ -963,8 +982,8 @@ export class DwtComponent implements OnInit, OnDestroy {
                 let newFile = new File([blob], "Saved_Blob_" + (i + 1) + "(" + blob.type + ")", { type: blob.type });
                 this.saveResults.blob.push(newFile);
                 this.saveResults.blobURL.push(URL.createObjectURL(newFile));
-                this.instantError = "";
-              }, err => this.instantError = err);
+                this.clearMessage();
+              }, err => this.showMessage(err));
           }
         }
         break;
@@ -977,8 +996,8 @@ export class DwtComponent implements OnInit, OnDestroy {
             .then(base64String => {
               this.saveResults.base64String.push(base64String);
               this.saveResults.base64ButtonText.push("Copy Base64 String");
-              this.instantError = "";
-            }, err => this.instantError = err);
+              this.clearMessage();
+            }, err => this.showMessage(err));
         } else {
           let count = this.DWObject.HowManyImagesInBuffer;
           for (let i = 0; i < count; i++) {
@@ -988,8 +1007,8 @@ export class DwtComponent implements OnInit, OnDestroy {
               .then(base64String => {
                 this.saveResults.base64String.push(base64String);
                 this.saveResults.base64ButtonText.push("Copy Base64 String for image " + i);
-                this.instantError = "";
-              }, err => this.instantError = err);
+                this.clearMessage();
+              }, err => this.showMessage(err));
           }
         }
         break;
@@ -1000,10 +1019,10 @@ export class DwtComponent implements OnInit, OnDestroy {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url)
         .then(_ => {
-          this.instantError = "URL of the blob copied, try paste it in another tab to view the blob!";
+          this.showMessage("URL of the blob copied, try paste it in another tab to view the blob!");
         });
     } else {
-      this.instantError = "Can not use the clipboard! Please use HTTPS.";
+      this.showMessage("Can not use the clipboard! Please use HTTPS.");
     }
   }
 }

@@ -193,6 +193,14 @@ export class DwtService {
       checkScript();
     });
   }
+  unMountDWT(): Promise<any> {
+    return new Promise((res, rej) => {
+      if (Dynamsoft.WebTwainEnv.DeleteDWTObject("dwtObject"))
+        res(true);
+      else
+        rej(false);
+    });
+  }
   /**
    * Create an extra WebTwain instance _DWObjectEx
    * This is used solely for displaying & capturing from a video stream.
@@ -238,7 +246,11 @@ export class DwtService {
     if (this._DWObjectEx)
       _dwt = this._DWObjectEx;
     this.devices = [];
-    let _scanners = <string[]>this._DWObject.GetSourceNames();
+    let count = this._DWObject.SourceCount;
+    let _scanners = <string[]>(this._DWObject.GetSourceNames());
+    if (count !== _scanners.length) {
+      console.log('Possible wrong source count!');//not likely to happen
+    }
     for (let i = 0; i < _scanners.length; i++) {
       this.devices.push({ name: (i + 1).toString() + "." + _scanners[i], realName: _scanners[i], type: "scanner" });
     }
@@ -247,6 +259,7 @@ export class DwtService {
     for (let i = 0; i < _cameras.length; i++) {
       this.devices.push({ name: (i + 1).toString() + "." + _cameras[i], realName: _cameras[i], type: "camera" });
     }
+    console.log(this.devices);
     return this.devices;
   }
   /**
@@ -369,16 +382,20 @@ export class DwtService {
     return new Promise((res, rej) => {
       if (this._selectedDevice !== "") {
         if (this._useCamera) {
-          if (this._DWObjectEx) {
-            this._DWObjectEx.Addon.Webcam.CaptureImage(() => {
-              this.getBlob([0], Dynamsoft.EnumDWT_ImageType.IT_PNG, this._DWObjectEx)
-                .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
-                  this._DWObjectEx.RemoveImage(0);
-                  res(true);
-                }, (errCode, errString) => rej(errString)));
-            }, (errCode, errStr) => rej(errStr));
+          if (config === undefined) {
+            if (this._DWObjectEx) {
+              this._DWObjectEx.Addon.Webcam.CaptureImage(() => {
+                this.getBlob([0], Dynamsoft.EnumDWT_ImageType.IT_PNG, this._DWObjectEx)
+                  .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
+                    this._DWObjectEx.RemoveImage(0);
+                    res(true);
+                  }, (errCode, errString) => rej(errString)));
+              }, (errCode, errStr) => rej(errStr));
+            } else {
+              rej("No WebTwain instanance for camera capture!");
+            }
           } else {
-            rej("No WebTwain instanance for camera capture!");
+            rej("Please select a scanner first!");
           }
         } else {
           this._DWObject.SetOpenSourceTimeout(3000);

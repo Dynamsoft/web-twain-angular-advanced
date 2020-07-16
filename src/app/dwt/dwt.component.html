@@ -116,7 +116,7 @@
         </div>
       </li>
     </ul>
-    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError && !emptyBuffer">
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">
       {{instantError}}</div>
   </div>
   <div class="modal-footer">
@@ -175,7 +175,7 @@
         </div>
       </li>
     </ul>
-    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError && !emptyBuffer">
+    <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">
       {{instantError}}</div>
   </div>
   <div *ngIf="bCameraAddonUsable" class="modal-footer" style="flex-direction: row;">
