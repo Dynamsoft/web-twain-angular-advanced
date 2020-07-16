@@ -57,6 +57,8 @@ export class DwtComponent implements OnInit, OnDestroy {
    * For OCR.
    */
   public ocrReady: boolean = false;
+  public useOCRPro: boolean = false;
+  public bLoadingOCREngine: boolean = false;
   public ocrResultString: string = "";
   public ocrResultFiles: File[] = [];
   public ocrResultURLs: string[] = [];
@@ -118,11 +120,37 @@ export class DwtComponent implements OnInit, OnDestroy {
     showRects: true,
     rectShowingTime: 5
   };
+  public OCREngine = "Choose...";
   public OCRLanguages = [];
   public OCROutputFormats = [];
+  public OCRProFindTextFlags = [];
+  public OCRProFindTextAction = [];
+  public OCRProLanguages = [];
+  public OCRProRecognitionModule = [];
+  public OCRProOutputFormat = [];
+  public OCRProPDFVersion = [];
+  public OCRProPDFAVersion = [];
   public ocrOptions = {
+    engine: "basic",
     Language: "eng",
     OutputFormat: "0"
+  };
+  public ocrProOptions = {
+    engine: "pro",
+    Language: "eng",
+    OutputFormat: "TXTS",
+    bFindText: false,
+    textToFind: "TWAIN",
+    FindTextFlags: 1,
+    FindTextAction: 0,
+    RecognitionModule: "AUTO",
+    PDFVersion: "1.5",
+    PDFAVersion: "pdf/a-1a"
+  };
+  public ocrProResultInfo = {
+    base64Prefix: "data:application/pdf;base64,",
+    extension: ".pdf",
+    type: "application/pdf"
   };
   public saveOptions = {
     outPutType: "File",
@@ -148,6 +176,13 @@ export class DwtComponent implements OnInit, OnDestroy {
     this.bMobile = this.dwtService.runningEnvironment.bMobile;
     this.OCRLanguages = this.dwtService.OCRLanguages;
     this.OCROutputFormats = this.dwtService.OCROutputFormats;
+    this.OCRProFindTextFlags = this.dwtService.OCRProFindTextFlags;
+    this.OCRProFindTextAction = this.dwtService.OCRProFindTextAction;
+    this.OCRProLanguages = this.dwtService.OCRProLanguages;
+    this.OCRProRecognitionModule = this.dwtService.OCRProRecognitionModule;
+    this.OCRProOutputFormat = this.dwtService.OCRProOutputFormat;
+    this.OCRProPDFVersion = this.dwtService.OCRProPDFVersion;
+    this.OCRProPDFAVersion = this.dwtService.OCRProPDFAVersion;
   }
   ngOnInit() {
     this.eventsSubscription = this.events.subscribe(
@@ -514,12 +549,6 @@ export class DwtComponent implements OnInit, OnDestroy {
         if (this.bMobile) return;
         this.ocrResultString = "";
         this.ocrButtonText = "Recognize";
-        this.dwtService.loadOCRModule()
-          .then(() => {
-            this.ocrReady = true;
-          }, err =>
-            this.showMessage(err)
-          );
         break;
       case "save":
         if (!this.emptyBuffer)
@@ -596,6 +625,60 @@ export class DwtComponent implements OnInit, OnDestroy {
         this.zones.splice(index, 1);
     }
   }
+  ocrEngineChange(engine: string) {
+    if (engine === "Choose...") { engine = "Basic"; this.OCREngine = "Basic"; }
+    if (engine === "Pro") {
+      this.showMessage("The Professional Engine is huge, please hold on while it downloads...");
+      this.useOCRPro = true;
+    } else {
+      this.useOCRPro = false;
+    }
+    this.bLoadingOCREngine = true;
+    this.ocrReady = false;
+    this.dwtService.loadOCRModule(engine)
+      .then(() => {
+        this.clearMessage();
+        this.bLoadingOCREngine = false;
+        this.ocrReady = true;
+      }, err =>
+        this.showMessage(err)
+      );
+  }
+  ocrProOutPutFormatChange(format: string) {
+    switch (format) {
+      case "TXTS":
+      case "TXTCSV":
+        if (format === "TXTCSV")
+          this.ocrProResultInfo = {
+            base64Prefix: "data:text/csv;base64,",
+            extension: ".csv",
+            type: "text/csv"
+          };
+      case "TXTF":
+        if (format === "TXTF")
+          this.ocrProResultInfo = {
+            base64Prefix: "data:application/rtf;base64,",
+            extension: ".rtf",
+            type: "application/rtf"
+          };
+      case "XML":
+        if (format === "XML")
+          this.ocrProResultInfo = {
+            base64Prefix: "data:text/xml;base64,",
+            extension: ".pdf",
+            type: "text/xml"
+          };
+        this.ocrProOptions.bFindText = false; break;
+      case "IOTPDF":
+      case "IOTPDF_MRC":
+        this.ocrProResultInfo = {
+          base64Prefix: "data:application/pdf;base64,",
+          extension: ".pdf",
+          type: "application/pdf"
+        };
+      default: break;
+    }
+  }
   doOCR() {
     this.ocrResultFiles = [];
     this.ocrResultURLs = [];
@@ -604,13 +687,20 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.clearMessage();
     this.ocrResultString = "";
     this.filterZones();
-    this.dwtService.ocr(this.ocrOptions.Language, parseInt(this.ocrOptions.OutputFormat), this.zones)
+    let ocrOptions = this.ocrOptions;
+    if (this.OCREngine === "Pro")
+      ocrOptions = this.ocrProOptions;
+    this.dwtService.ocr(ocrOptions, this.zones)
       .then(
         res => {
           this.ocrButtonText = "Done, click to do it again"
           this.clearMessage();
           let resultStrings = res.split(",");
-          switch (this.ocrOptions.OutputFormat) {
+          let format = this.ocrOptions.OutputFormat;
+          if (this.OCREngine === "Pro")
+            format = this.ocrProOptions.OutputFormat;
+          switch (format) {
+            case "TXTS":
             case "0" /* TEXT */:
               let stringToShow: string[] = [];
               for (let i = 0; i < resultStrings.length; i++) {
@@ -619,13 +709,18 @@ export class DwtComponent implements OnInit, OnDestroy {
               this.ocrResultString = stringToShow.join("\n"); break;
             case "1" /* Text PDF */:
             case "2" /* Image PDF */:
+            case "IOTPDF":
+            case "IOTPDF_MRC":
+            case "TXTCSV":
+            case "TXTF":
+            case "XML":
               this.ocrResultFiles = [];
               this.ocrResultURLs = [];
               for (let i = 0; i < resultStrings.length; i++) {
-                fetch("data:application/pdf;base64," + resultStrings[i])
+                fetch(this.ocrProResultInfo.base64Prefix + resultStrings[i])
                   .then(r => r.blob())
                   .then(blob => {
-                    let newFile = new File([blob], "OCRResult_" + i + ".pdf", { type: "application/pdf" });
+                    let newFile = new File([blob], "OCR_Result_" + i + this.ocrProResultInfo.extension, { type: this.ocrProResultInfo.type });
                     this.ocrResultFiles.push(newFile);
                     this.ocrResultURLs.push(URL.createObjectURL(newFile));
                   });
@@ -1019,7 +1114,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url)
         .then(_ => {
-          this.showMessage("URL of the blob copied, try paste it in another tab to view the blob!");
+          this.showMessage("URL of the blob copied, try paste it in another tab to view it or download the blob as a file. Don't forget to add an extension to the downloaded file before opening it!");
         });
     } else {
       this.showMessage("Can not use the clipboard! Please use HTTPS.");

@@ -148,8 +148,7 @@ button.save {
 .ocrResultString {
   overflow: auto;
   padding: 1vmin;
-  margin-top: 1vh;
-  width: 100%;
+  margin: 1vh;
   height: auto;
   font-size: 12px;
   line-height: 20px;

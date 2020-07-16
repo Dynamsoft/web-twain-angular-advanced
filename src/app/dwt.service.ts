@@ -7,6 +7,7 @@ import { DynamsoftEnums } from 'dwt/Dynamsoft.Enum';
 import { WebTwain } from 'dwt/WebTwain';
 import { DeviceConfiguration, ScanSetup } from 'dwt/WebTwain.Acquire';
 import { RuntimeSettings, TextResults, TextResult } from 'dwt/Addon.BarcodeReader';
+import { OCRPro, Rect } from 'dwt/Addon.OCRPro';
 
 @Injectable({
   providedIn: 'root'
@@ -88,6 +89,60 @@ export class DwtService {
     { desc: "STRING", val: 0 },
     { desc: "Text PDF", val: 1 },
     { desc: "Image-over-text PDF", val: 2 }
+  ];
+  public OCRProFindTextFlags = [
+    { desc: "whole word", val: Dynamsoft.EnumDWT_OCRFindTextFlags.OCRFT_WHOLEWORD },
+    { desc: "match case", val: Dynamsoft.EnumDWT_OCRFindTextFlags.OCRFT_MATCHCASE },
+    { desc: "fuzzy match", val: Dynamsoft.EnumDWT_OCRFindTextFlags.OCRFT_FUZZYMATCH }
+  ];
+  public OCRProFindTextAction = [
+    { desc: "highlight", val: Dynamsoft.EnumDWT_OCRFindTextAction.OCRFT_HIGHLIGHT },
+    { desc: "strikeout", val: Dynamsoft.EnumDWT_OCRFindTextAction.OCRFT_STRIKEOUT },
+    { desc: "mark for redact", val: Dynamsoft.EnumDWT_OCRFindTextAction.OCRFT_MARKFORREDACT }
+  ];
+  public OCRProLanguages = [
+    { desc: "English", val: "eng" },
+    { desc: "Arabic", val: "arabic" },
+    { desc: "French", val: "french" },
+    { desc: "German", val: "german" },
+    { desc: "Italian", val: "italian" },
+    { desc: "Spanish", val: "spanish" }
+  ];
+  public OCRProRecognitionModule = [
+    { desc: "auto", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_AUTO },
+    { desc: "most accurate", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_MOSTACCURATE },
+    { desc: "balanced", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_BALANCED },
+    { desc: "fastest", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_FASTEST }
+  ];
+  public OCRProOutputFormat = [
+    { desc: "STRING", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_TXTS },
+    { desc: "CSV", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_TXTCSV },
+    { desc: "Text Formatted", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_TXTF },
+    { desc: "XML", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_XML },
+    { desc: "PDF", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF },
+    { desc: "PDF with MRC compression", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF_MRC }
+  ];
+  public OCRProPDFVersion = [
+    { desc: "", val: "" },
+    { desc: "1.0", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_0 },
+    { desc: "1.1", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_1 },
+    { desc: "1.2", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_2 },
+    { desc: "1.3", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_3 },
+    { desc: "1.4", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_4 },
+    { desc: "1.5", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_5 },
+    { desc: "1.6", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_6 },
+    { desc: "1.7", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_7 }
+  ];
+  public OCRProPDFAVersion = [
+    { desc: "", val: "" },
+    { desc: "pdf/a-1a", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_1A },
+    { desc: "pdf/a-1b", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_1B },
+    { desc: "pdf/a-2a", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2A },
+    { desc: "pdf/a-2b", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2B },
+    { desc: "pdf/a-2u", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2U },
+    { desc: "pdf/a-3a", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3A },
+    { desc: "pdf/a-3b", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3B },
+    { desc: "pdf/a-3u", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3U }
   ];
   /**
    * Save
@@ -619,25 +674,39 @@ export class DwtService {
   /**
    * loadOCRModule & downloadOCRBasic prepare resources for the OCR module.
    */
-  loadOCRModule(): Promise<any> {
+  loadOCRModule(engine: string): Promise<any> {
     return new Promise((res, rej) => {
       if (Dynamsoft.Lib.product.bHTML5Edition) {
-        if (this._DWObject.Addon.OCR.IsModuleInstalled()) {
-          this.downloadOCRBasic(false)
-            .then(
-              success =>
-                res(success),
-              error =>
-                rej(error)
-            );
+        if (engine === "Pro") {
+          if (this._DWObject.Addon.OCRPro.IsModuleInstalled()) {
+            res(true);
+          } else {
+            this.downloadOCRPro()
+              .then(
+                success =>
+                  res(success),
+                error =>
+                  rej(error)
+              );
+          }
         } else {
-          this.downloadOCRBasic(true)
-            .then(
-              success =>
-                res(success),
-              error =>
-                rej(error)
-            );
+          if (this._DWObject.Addon.OCR.IsModuleInstalled()) {
+            this.downloadOCRBasic(false)
+              .then(
+                success =>
+                  res(success),
+                error =>
+                  rej(error)
+              );
+          } else {
+            this.downloadOCRBasic(true)
+              .then(
+                success =>
+                  res(success),
+                error =>
+                  rej(error)
+              );
+          }
         }
       }
       else {
@@ -666,54 +735,106 @@ export class DwtService {
       }
     });
   }
+  downloadOCRPro(): Promise<any> {
+    return new Promise((res, rej) => {
+      let strOCRPath = "https://tst.dynamsoft.com/libs/ocrp/OCRProx64.zip";
+      this._DWObject.Addon.OCRPro.Download(
+        strOCRPath,
+        () => res(true),
+        (errorCode, errorString) => rej(errorString)
+      );
+    });
+  }
   /**
    * Prepararation for the OCR.
    * @param language The target language.
    * @param outputFormat The output format.
    * @param zones Zones to read.
    */
-  ocr(language: DynamsoftEnums.EnumDWT_OCRLanguage | string, outputFormat: DynamsoftEnums.EnumDWT_OCROutputFormat, zones?: Zone[]): Promise<string> {
+  ocr(ocrOptions: OCROptions | OCRProOptions, zones?: Zone[]): Promise<string> {
     let _index = this._DWObject.CurrentImageIndexInBuffer;
     if (zones) zones = this.filterZones(_index, zones);
-    return new Promise((res, rej) => {
-      this._DWObject.Addon.OCR.SetLanguage(language);
-      this._DWObject.Addon.OCR.SetOutputFormat(outputFormat);
-      let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
-      for (let i = 0; i < this.OCRLanguages.length; i++) {
-        if (this.OCRLanguages[i].val === language) {
-          strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/' + this.OCRLanguages[i].desc + '.zip';
+    if (ocrOptions.engine === "basic") {
+      let language: DynamsoftEnums.EnumDWT_OCRLanguage = <DynamsoftEnums.EnumDWT_OCRLanguage>ocrOptions.Language;
+      let outputFormat: DynamsoftEnums.EnumDWT_OCROutputFormat = parseInt(ocrOptions.OutputFormat);
+      return new Promise((res, rej) => {
+        this._DWObject.Addon.OCR.SetLanguage(language);
+        this._DWObject.Addon.OCR.SetOutputFormat(outputFormat);
+        let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
+        for (let i = 0; i < this.OCRLanguages.length; i++) {
+          if (this.OCRLanguages[i].val === language) {
+            strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/' + this.OCRLanguages[i].desc + '.zip';
+          }
         }
-      }
-      this.downloadOCRBasic(false)
-        .then(
-          () => {
-            this.ocrResultBase64Strings = [];
-            let i = 0;
-            if (zones !== undefined && zones.length > 0) {
-              let ocrCallback = (hasError: boolean, errStr?: string) => {
-                if (hasError) {
-                  rej(errStr);
-                } else {
-                  if (i === zones.length) {
-                    res(this.processOCRResult());
+        this.downloadOCRBasic(false)
+          .then(
+            () => {
+              this.ocrResultBase64Strings = [];
+              let i = 0;
+              if (zones !== undefined && zones.length > 0) {
+                let ocrCallback = (hasError: boolean, errStr?: string) => {
+                  if (hasError) {
+                    rej(errStr);
                   } else {
-                    this.doOCR(_index, zones[i], ocrCallback);
-                    i++;
+                    if (i === zones.length) {
+                      res(this.processOCRResult());
+                    } else {
+                      this.doOCR(_index, zones[i], ocrCallback);
+                      i++;
+                    }
                   }
-                }
-              };
-              ocrCallback(false);
-            } else
-              this.doOCR(_index, null, (hasError: boolean, errStr?: string) => {
-                if (hasError) {
-                  rej(errStr);
-                } else
-                  res(this.processOCRResult());
-              });
-          },
-          err => rej(err)
-        );
-    });
+                };
+                ocrCallback(false);
+              } else
+                this.doOCR(_index, null, (hasError: boolean, errStr?: string) => {
+                  if (hasError) {
+                    rej(errStr);
+                  } else
+                    res(this.processOCRResult());
+                });
+            },
+            err => rej(err)
+          );
+      });
+    } else {
+      return new Promise((res, rej) => {
+        let settings = Dynamsoft.WebTwain.Addon.OCRPro.NewSettings();
+        settings.Languages = ocrOptions.Language;
+        settings.RecognitionModule = (<OCRProOptions>ocrOptions).RecognitionModule;
+        settings.OutputFormat = (<OCRProOptions>ocrOptions).OutputFormat;
+        if ((<OCRProOptions>ocrOptions).OutputFormat === Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF ||
+          (<OCRProOptions>ocrOptions).OutputFormat === Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF_MRC) {
+          settings.PDFVersion = (<OCRProOptions>ocrOptions).PDFVersion;
+          settings.PDFAVersion = (<OCRProOptions>ocrOptions).PDFAVersion;
+        }
+        if ((<OCRProOptions>ocrOptions).bFindText) {
+          settings.Redaction.FindText = (<OCRProOptions>ocrOptions).textToFind;
+          settings.Redaction.FindTextFlags = (<OCRProOptions>ocrOptions).FindTextFlags;
+          settings.Redaction.FindTextAction = (<OCRProOptions>ocrOptions).FindTextAction;
+        }
+        //settings.LicenseChecker =
+        this._DWObject.Addon.OCRPro.Settings = settings;
+        this.ocrResultBase64Strings = [];
+        if (zones !== undefined && zones.length > 0) {
+          let rects: Rect[] = [];
+          for (let i = 0; i < zones.length; i++) {
+            rects.push({ left: zones[i].x, right: zones[i].x + zones[i].width, top: zones[i].y, bottom: zones[i].y + zones[i].height });
+          }
+          this._DWObject.Addon.OCRPro.RecognizeRect(_index, rects, (_index, aryZone, result) => {
+            this.ocrResultBase64Strings.push(result.Get());
+            res(this.processOCRResult());
+          }, (errCode, errString) => rej(errString)
+          );
+        }
+        else {
+          this._DWObject.Addon.OCRPro.Recognize(_index, (_index, result) => {
+            this.ocrResultBase64Strings.push(result.Get());
+            res(this.processOCRResult());
+          }, (errCode, errString) => rej(errString)
+          );
+        }
+      });
+    }
   }
   /**
    * Actual OCR.
@@ -964,3 +1085,22 @@ interface Zone {
   height: number;
   index: number;
 }
+
+interface OCROptions {
+  engine: string;
+  Language: string;
+  OutputFormat: string;
+};
+
+interface OCRProOptions {
+  engine: string;
+  Language: string;
+  OutputFormat: string;
+  bFindText: boolean;
+  textToFind: string;
+  FindTextFlags: number;
+  FindTextAction: number;
+  RecognitionModule: string;
+  PDFVersion: string;
+  PDFAVersion: string;
+};
