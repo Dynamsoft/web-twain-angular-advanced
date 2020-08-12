@@ -4,7 +4,7 @@ import { WebTwain } from 'dwt/WebTwain';
 import { BasicViewerConfig } from 'dwt/WebTwain.Viewer';
 import { Subscription, Observable, empty } from 'rxjs';
 import Dynamsoft from 'dwt';
-import { NgbModal, NgbModalRef, ModalDismissReasons, } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef, } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-dwt',
@@ -523,6 +523,10 @@ export class DwtComponent implements OnInit, OnDestroy {
               return;
             }
             container.style.height = "100%";
+            this.cameraOptions = [];
+            this.currentOption = "";
+            this.currentItem = "";
+            this.currentOptionItems = [];
             this.VideoContainer.BindViewer(this.videoContainerId, {
               Height: "100%",
               Width: "100%",
@@ -567,6 +571,9 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.modalRef.close();
     else
       this.modalRef.dismiss();
+  }
+  openCamera() {
+    this.DWObject.Viewer.showVideo();
   }
   handleDeviceChange() {
     if (this.deviceName === "" || this.deviceName === "Choose...")

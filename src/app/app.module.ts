@@ -1,11 +1,11 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
+
 import { AppComponent } from './app.component';
 import { DwtComponent } from './dwt/dwt.component';
 import { FormsModule } from '@angular/forms';
-import { CallbackPipe } from './callback.pipe';
-import { DragDropModule } from '@angular/cdk/drag-drop';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { CallbackPipe } from './callback.pipe';
 import { SafeurlPipe } from './safeurl.pipe';
 
 @NgModule({
@@ -18,10 +18,9 @@ import { SafeurlPipe } from './safeurl.pipe';
   imports: [
     BrowserModule,
     FormsModule,
-    DragDropModule,
     NgbModule
   ],
-  providers: [SafeurlPipe],
+  providers: [],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -9,11 +9,6 @@
 
 # dependencies
 /node_modules
-/src/assets/dwt-resources/dist
-/src/assets/dwt-resources/addon
-/src/assets/dwt-resources/dynamsoft.webtwain.config.js
-/src/assets/dwt-resources/dynamsoft.webtwain.initiate.js
-/src/assets/dwt-resources/Readme.txt
 
 # profiling files
 chrome-profiler-events*.json

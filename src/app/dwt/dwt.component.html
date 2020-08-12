@@ -17,11 +17,13 @@
     </div>
   </div>
   <div class="controlPanel" *ngIf="dwtMounted">
-    <button class="btn btn-outline-info acquire" *ngIf="bMobile" value="acquire" title="Acquire Images"
+    <button class="btn btn-outline-info acquire" *ngIf="bWASM" value="acquire" title="Acquire Images"
       (click)="acquire()"></button>
-    <button class="btn btn-outline-info acquire" *ngIf="!bMobile" value="acquire" title="Acquire Images"
+    <button class="btn btn-outline-info acquire" *ngIf="!bWASM" value="acquire" title="Acquire Images"
       (click)="openModal(scannerModalRef,'acquire')"></button>
-    <button class="btn btn-outline-info camera" value="camera" title="Use Camera"
+    <button class="btn btn-outline-info camera" *ngIf="bWASM" value="camera" title="Use Camera"
+      (click)="openCamera()"></button>
+    <button class="btn btn-outline-info camera" *ngIf="!bWASM" value="camera" title="Use Camera"
       (click)="openModal(cameraModalRef,'camera')"></button>
     <button class="btn btn-outline-info edit" value="edit" title="Edit the image" (click)="showEditor()"></button>
     <button class="btn btn-outline-info barcode" value="barcode" title="Read Barcode"
@@ -342,7 +344,7 @@
     <div class="input-group-prepend mt-2">
       <label class="input-group-text w-50" for="OutputFormat">Output Format</label>
       <select class="custom-select w-50" id="OutputFormat" [(ngModel)]="ocrProOptions.OutputFormat"
-      (ngModelChange)="ocrProOutPutFormatChange($event)">
+        (ngModelChange)="ocrProOutPutFormatChange($event)">
         <option *ngFor="let outputFormat of OCRProOutputFormat; let i = index" value={{outputFormat.val}}>
           {{outputFormat.desc}}</option>
       </select>
