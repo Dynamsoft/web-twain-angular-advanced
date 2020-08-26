@@ -64,11 +64,11 @@
           </label>
         </div>
       </li>
-      <li *ngIf="!bWASM" class="list-group-item">
+      <li *ngIf="!bWASM && showDevices" class="list-group-item">
         <div class="input-group-prepend">
           <label class="input-group-text" style="width: 18%;" for="device">Device</label>
           <select class="custom-select" style="width: 80%;" id="device" [(ngModel)]="deviceName"
-            (change)="handleDeviceChange()">
+            (change)="handleDeviceChange('scanner')">
             <option selected>Choose...</option>
             <option *ngFor="let device of (devices | callback:isScannerFilter)">{{device.name}}</option>
           </select>
@@ -138,16 +138,13 @@
       <span aria-hidden="true">&times;</span>
     </button>
   </div>
-  <div *ngIf="!bCameraAddonUsable" class="modal-body alert alert-info" role="alert">
-    Camera support on your current platform is under development, stay tuned!!
-  </div>
-  <div *ngIf="bCameraAddonUsable" class="modal-body">
+  <div class="modal-body">
     <ul class="list-group">
-      <li class="list-group-item">
+      <li *ngIf="showDevices" class="list-group-item">
         <div class="input-group-prepend">
           <label class="input-group-text" style="width: 20%;" for="device2">Device</label>
           <select class="custom-select" style="width: 80%;" id="device2" [(ngModel)]="deviceName"
-            (change)="handleDeviceChange()">
+            (change)="handleDeviceChange('camera')">
             <option selected>Choose...</option>
             <option *ngFor="let device of (devices | callback:isCameraFilter)">{{device.name}}</option>
           </select>
@@ -156,7 +153,7 @@
       <li style="height:30vh">
         <div id={{videoContainerId}}></div>
       </li>
-      <li *ngIf="cameraOptions.length>0" class="list-group-item">
+      <li *ngIf="cameraOptions.length>0 && bUseCameraViaDirectShow" class="list-group-item">
         <select [ngClass]="{'custom-select half':true}" [(ngModel)]="currentOption" (change)="handleOptionChange()">
           <option *ngFor="let cameraOption of cameraOptions">{{cameraOption.name}}</option>
         </select>
@@ -180,7 +177,7 @@
     <div class="alert alert-danger" style="margin:2% 0" role="alert" *ngIf="instantError">
       {{instantError}}</div>
   </div>
-  <div *ngIf="bCameraAddonUsable" class="modal-footer" style="flex-direction: row;">
+  <div *ngIf="showDevices" class="modal-footer" style="flex-direction: row;">
     <button type="button" class="btn btn-primary" style="width:48%;" (click)="toggleVideo()">{{showVideoText}}</button>
     <button type="button" class="btn btn-primary" style="width:48%;" (click)="acquireFromCamera()">Capture</button>
   </div>
@@ -203,7 +200,7 @@
         {{outputMessage.text}}</li>
     </ul>
     <input type="checkbox" [(ngModel)]="barcodeReaderOptions.showRects"
-      aria-label="Checkbox for show Rects">&nbsp;&nbsp;Show barcode locations on the image (5s).
+      aria-label="Checkbox for show Rects">&nbsp;&nbsp;Show barcode locations on the image (3s).
   </div>
   <div class="modal-body" *ngIf="outputMessages.length===0">
     <ul class="list-group">

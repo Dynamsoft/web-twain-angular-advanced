@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { environment } from './../environments/environment';
 import Dynamsoft from 'dwt';
-import { DWTInitialConfig } from 'dwt/Dynamsoft';
 import { DynamsoftEnums } from 'dwt/Dynamsoft.Enum';
 import { WebTwain } from 'dwt/WebTwain';
 import { DeviceConfiguration, ScanSetup } from 'dwt/WebTwain.Acquire';
 import { RuntimeSettings, TextResults, TextResult } from 'dwt/Addon.BarcodeReader';
 import { OCRPro, Rect } from 'dwt/Addon.OCRPro';
+import { DWTInitialConfig } from 'dwt/Dynamsoft';
 
 @Injectable({
   providedIn: 'root'
@@ -45,7 +45,11 @@ export class DwtService {
    * Camera
    */
   protected _useCamera: boolean;
-  public bCameraAddonUsable: boolean = false;
+  /**
+   * The Webcam Addon vai DirectShow only works for Service mode on Desktop (dwt@16.1.1)
+   * Otherwise, Camera Addon is used.
+   */
+  public bUseCameraViaDirectShow: boolean = false;
   public cameraOptions = [];
   /**
    * Barcode
@@ -163,29 +167,6 @@ export class DwtService {
       this.mountDWT();
     };
   }
-  /**
-   * To make dynamsoft.webtwain.install.js compatible with Angular
-   */
-  modulizeInstallJS() {
-    let _DWT_Reconnect = (<any>window).DWT_Reconnect;
-    (<any>window).DWT_Reconnect = (...args) => _DWT_Reconnect.call({ Dynamsoft: Dynamsoft }, ...args);
-    let __show_install_dialog = (<any>window)._show_install_dialog;
-    (<any>window)._show_install_dialog = (...args) => __show_install_dialog.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainOldPluginNotAllowedCallback = (<any>window).OnWebTwainOldPluginNotAllowedCallback;
-    (<any>window).OnWebTwainOldPluginNotAllowedCallback = (...args) => _OnWebTwainOldPluginNotAllowedCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainNeedUpgradeCallback = (<any>window).OnWebTwainNeedUpgradeCallback;
-    (<any>window).OnWebTwainNeedUpgradeCallback = (...args) => _OnWebTwainNeedUpgradeCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainPreExecuteCallback = (<any>window).OnWebTwainPreExecuteCallback;
-    (<any>window).OnWebTwainPreExecuteCallback = (...args) => _OnWebTwainPreExecuteCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTwainPostExecuteCallback = (<any>window).OnWebTwainPostExecuteCallback;
-    (<any>window).OnWebTwainPostExecuteCallback = (...args) => _OnWebTwainPostExecuteCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnRemoteWebTwainNotFoundCallback = (<any>window).OnRemoteWebTwainNotFoundCallback;
-    (<any>window).OnRemoteWebTwainNotFoundCallback = (...args) => _OnRemoteWebTwainNotFoundCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnRemoteWebTwainNeedUpgradeCallback = (<any>window).OnRemoteWebTwainNeedUpgradeCallback;
-    (<any>window).OnRemoteWebTwainNeedUpgradeCallback = (...args) => _OnRemoteWebTwainNeedUpgradeCallback.call({ Dynamsoft: Dynamsoft }, ...args);
-    let _OnWebTWAINDllDownloadFailure = (<any>window).OnWebTWAINDllDownloadFailure;
-    (<any>window).OnWebTWAINDllDownloadFailure = (...args) => _OnWebTWAINDllDownloadFailure.call({ Dynamsoft: Dynamsoft }, ...args);
-  }
   mountDWT(UseService?: boolean): Promise<any> {
     this._DWObject = null;
     return new Promise((res, rej) => {
@@ -199,17 +180,16 @@ export class DwtService {
        */
       let checkScript = () => {
         if (Dynamsoft.Lib.detect.scriptLoaded) {
-          this.modulizeInstallJS();
-          if (UseService !== undefined)
-            Dynamsoft.WebTwainEnv.UseLocalService = UseService;
-          else {
-            Dynamsoft.WebTwainEnv.UseLocalService = this.bUseService;
+          if (this.runningEnvironment.bMobile) {
+            Dynamsoft.WebTwainEnv.UseLocalService = false;
+          } else {
+            if (UseService !== undefined)
+              Dynamsoft.WebTwainEnv.UseLocalService = UseService;
+            else {
+              Dynamsoft.WebTwainEnv.UseLocalService = this.bUseService;
+            }
           }
           this.bWASM = this.runningEnvironment.bMobile || !Dynamsoft.WebTwainEnv.UseLocalService;
-          /**
-           * The Camera Addon only works for Service mode on Desktop at present (dwt@16.0.0)
-           */
-          this.bCameraAddonUsable = !this.bWASM && this.runningEnvironment.bWin;
           Dynamsoft.WebTwainEnv.CreateDWTObjectEx(
             dwtInitialConfig,
             (_DWObject) => {
@@ -296,26 +276,41 @@ export class DwtService {
   /**
    * Retrieve all devices (scanners + cameras).
    */
-  getDevices() {
-    let _dwt = this._DWObject;
-    if (this._DWObjectEx)
-      _dwt = this._DWObjectEx;
-    this.devices = [];
-    let count = this._DWObject.SourceCount;
-    let _scanners = <string[]>(this._DWObject.GetSourceNames());
-    if (count !== _scanners.length) {
-      console.log('Possible wrong source count!');//not likely to happen
-    }
-    for (let i = 0; i < _scanners.length; i++) {
-      this.devices.push({ name: (i + 1).toString() + "." + _scanners[i], realName: _scanners[i], type: "scanner" });
-    }
-    this._scannersCount = this.devices.length;
-    let _cameras = _dwt.Addon.Webcam.GetSourceList();
-    for (let i = 0; i < _cameras.length; i++) {
-      this.devices.push({ name: (i + 1).toString() + "." + _cameras[i], realName: _cameras[i], type: "camera" });
-    }
-    console.log(this.devices);
-    return this.devices;
+  getDevices(): Promise<Device[]> {
+    return new Promise((res, rej) => {
+      let _dwt = this._DWObject;
+      if (this._DWObjectEx)
+        _dwt = this._DWObjectEx;
+      this.devices = [];
+      let count = this._DWObject.SourceCount;
+      let _scanners = <string[]>(this._DWObject.GetSourceNames());
+      if (count !== _scanners.length) {
+        rej('Possible wrong source count!');//not likely to happen
+      }
+      for (let i = 0; i < _scanners.length; i++) {
+        this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + _scanners[i], label: _scanners[i], type: "scanner" });
+      }
+      this._scannersCount = this.devices.length;
+      if (this.bUseCameraViaDirectShow) {
+        try {
+          let _cameras = _dwt.Addon.Webcam.GetSourceList();
+          for (let i = 0; i < _cameras.length; i++) {
+            this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + _cameras[i], label: _cameras[i], type: "camera" });
+          }
+          res(this.devices);
+        } catch (e) {
+          rej(e);
+        }
+      } else {
+        _dwt.Addon.Camera.getSourceList()
+          .then(_cameras => {
+            for (let i = 0; i < _cameras.length; i++) {
+              this.devices.push({ deviceId: _cameras[i].deviceId, name: (i + 1).toString() + "." + _cameras[i].label, label: _cameras[i].label, type: "camera" });
+            }
+            res(this.devices);
+          }, err => rej(err));
+      }
+    });
   }
   /**
    * Retrieve detailed information of the devices.
@@ -329,6 +324,7 @@ export class DwtService {
    */
   selectADevice(name: string): Promise<boolean> {
     return new Promise((res, rej) => {
+      let waitForAnotherPromise = false;
       this._selectedDevice = "";
       this._useCamera = false;
       if (this.devices.length === 0)
@@ -339,14 +335,34 @@ export class DwtService {
             let _dwt = this._DWObject;
             if (this._DWObjectEx)
               _dwt = this._DWObjectEx;
-            _dwt.Addon.Webcam.StopVideo();
-            if (_dwt.Addon.Webcam.SelectSource(value.realName)) {
-              this._selectedDevice = name;
-              this._useCamera = true;
-              this.updateCameraValues(_dwt);
+            if (this.bUseCameraViaDirectShow) {
+              _dwt.Addon.Webcam.StopVideo();
+              if (_dwt.Addon.Webcam.SelectSource(value.label)) {
+                this._selectedDevice = name;
+                this._useCamera = true;
+                this.updateCameraValues(_dwt);
+              }
+              else {
+                rej("Can't use the Webcam " + name + ", please make sure it's not in use!")
+              }
             }
             else {
-              rej("Can't use the Webcam " + name + ", please make sure it's not in use!")
+              waitForAnotherPromise = true;
+              _dwt.Addon.Camera.selectSource(value.deviceId)
+                .then(deviceInfo => {
+                  this._selectedDevice = name;
+                  this._useCamera = true;
+                  if (this._selectedDevice !== "") {
+                    this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
+                    res(true);
+                  }
+                  else
+                    res(false);
+                },
+                  () => {
+                    rej("Can't use the Webcam " + name + ", please make sure it's not in use!")
+                  }
+                )
             }
           }
           else {
@@ -356,12 +372,14 @@ export class DwtService {
           }
         }
       });
-      if (this._selectedDevice !== "") {
-        this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
-        res(true);
+      if (!waitForAnotherPromise) {
+        if (this._selectedDevice !== "") {
+          this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
+          res(true);
+        }
+        else
+          res(false);
       }
-      else
-        res(false);
     });
   }
   /**
@@ -437,8 +455,8 @@ export class DwtService {
     return new Promise((res, rej) => {
       if (this._selectedDevice !== "") {
         if (this._useCamera) {
-          if (config === undefined) {
-            if (this._DWObjectEx) {
+          if (this._DWObjectEx) {
+            if (this.bUseCameraViaDirectShow) {
               this._DWObjectEx.Addon.Webcam.CaptureImage(() => {
                 this.getBlob([0], Dynamsoft.EnumDWT_ImageType.IT_PNG, this._DWObjectEx)
                   .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
@@ -446,11 +464,16 @@ export class DwtService {
                     res(true);
                   }, (errCode, errString) => rej(errString)));
               }, (errCode, errStr) => rej(errStr));
-            } else {
-              rej("No WebTwain instanance for camera capture!");
+            }
+            else {
+              this._DWObjectEx.Addon.Camera.capture()
+                .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
+                  this._DWObjectEx.RemoveImage(0);
+                  res(true);
+                }, (errCode, errString) => rej(errString)));
             }
           } else {
-            rej("Please select a scanner first!");
+            rej("No WebTwain instanance for camera capture!");
           }
         } else {
           this._DWObject.SetOpenSourceTimeout(3000);
@@ -1073,8 +1096,9 @@ export class DwtService {
   }
 }
 export interface Device {
+  deviceId: string,
   name: string,
-  realName: string,
+  label: string,
   type: string
 }
 

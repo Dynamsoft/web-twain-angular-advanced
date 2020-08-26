@@ -37,11 +37,12 @@ export class DwtComponent implements OnInit, OnDestroy {
   public bWASM = false;
   public dwtMounted = false;
   public bMobile: boolean;
-  public bCameraAddonUsable: boolean;
+  public bUseCameraViaDirectShow: boolean;
   public containerId = "dwtcontrolContainer";
   public videoContainerId = "videoContainer";
   public editorShown = false;
   public devices: Device[];
+  public showDevices: boolean = false;
   public deviceName: string = "Choose...";
   public basicView: BasicViewerConfig;
   public emptyBuffer: boolean = true;
@@ -118,7 +119,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     },
     Mode: "balance",
     showRects: true,
-    rectShowingTime: 5
+    rectShowingTime: 3
   };
   public OCREngine = "Choose...";
   public OCRLanguages = [];
@@ -440,7 +441,7 @@ export class DwtComponent implements OnInit, OnDestroy {
         obj => {
           this.DWObject = obj;
           this.bWASM = this.dwtService.bWASM;
-          this.bCameraAddonUsable = this.dwtService.bCameraAddonUsable;
+          this.bUseCameraViaDirectShow = this.dwtService.bUseCameraViaDirectShow;
           this.dwtMounted = true;
           this.dwtService.mountVideoContainer()
             .then(containerDWT => {
@@ -448,6 +449,7 @@ export class DwtComponent implements OnInit, OnDestroy {
             }, err => this.showMessage(err));
           setTimeout(() => {
             this.bindViewer();
+            this.DWObject.Viewer.imageMargin = 10;
           }, 0);
         },
         err => this.showMessage(err));
@@ -465,8 +467,14 @@ export class DwtComponent implements OnInit, OnDestroy {
             if (this.bWASM)
               return true;
             if (this.videoPlaying) {
-              this.showMessage("Please stop video first!");
-              return false;
+              if (this.bUseCameraViaDirectShow) {
+                this.showMessage("Please stop video first!");
+                return false;
+              }
+              else {
+                this.toggleVideo();
+                return true;
+              }
             } else {
               this.deviceName = "Choose...";
               return this.VideoContainer.UnbindViewer();
@@ -476,7 +484,7 @@ export class DwtComponent implements OnInit, OnDestroy {
               () => {
                 this.barcodeReaderOptions.rectShowingTime--;
                 if (this.barcodeReaderOptions.rectShowingTime === 0) {
-                  this.barcodeReaderOptions.rectShowingTime = 5;
+                  this.barcodeReaderOptions.rectShowingTime = 3;
                   this.barcodeReaderOptions.showRects = false;
                   clearInterval(__interval);
                 }
@@ -539,7 +547,8 @@ export class DwtComponent implements OnInit, OnDestroy {
         makeSureDIVExists();
       case "acquire":
         this.clearMessage();
-        this.devices = this.dwtService.getDevices();
+        this.dwtService.getDevices()
+          .then(result => { this.devices = result; this.showDevices = true; }, err => this.showMessage(err));
         this.deviceName = "Choose...";
         break;
       case "barcode":
@@ -575,13 +584,21 @@ export class DwtComponent implements OnInit, OnDestroy {
   openCamera() {
     this.DWObject.Viewer.showVideo();
   }
-  handleDeviceChange() {
+  handleDeviceChange(deviceType: string) {
     if (this.deviceName === "" || this.deviceName === "Choose...")
       return;
     this.dwtService.selectADevice(this.deviceName)
       .then(
-        done => done ? this.clearMessage() : this.showMessage("Device selecting failed!"),
+        done => done ? this.openADevice(deviceType) : this.showMessage("Device selecting failed!"),
         error => typeof error === "string" ? this.showMessage(error) : this.showMessage("Device selecting failed!"));
+  }
+  openADevice(deviceType: string) {
+    this.clearMessage();
+    if (deviceType === "camera") {
+      if (this.videoPlaying)
+        this.toggleVideo();
+      this.toggleVideo();
+    }
   }
   acquire() {
     if (this.dwtService.bWASM) {
@@ -872,19 +889,32 @@ export class DwtComponent implements OnInit, OnDestroy {
   }
   playVideo() {
     let _dwt = this.DWObject;
-    this.DWObject.Addon.Webcam.StopVideo();
-    this.DWObject.Addon.Webcam.CloseSource();
+    if (this.bUseCameraViaDirectShow) {
+      this.DWObject.Addon.Webcam.StopVideo();
+      this.DWObject.Addon.Webcam.CloseSource();
+    }
+    else
+      this.DWObject.Addon.Camera.stop();
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     if (this.VideoContainer === null) {
       this.showMessage("No Video Container!");
       return false;
     }
-    _dwt.Addon.Webcam.PlayVideo(_dwt, 80, () => {
-      this.showVideoText = "Stop Video";
-      this.videoPlaying = true;
-    });
-    return true;
+    if (this.bUseCameraViaDirectShow) {
+      _dwt.Addon.Webcam.PlayVideo(_dwt, 80, () => {
+        this.showVideoText = "Stop Video";
+        this.videoPlaying = true;
+      });
+      return true;
+    } else {
+      _dwt.Addon.Camera.play(document.getElementById(this.videoContainerId))
+        .then(() => {
+          this.showVideoText = "Stop Video";
+          this.videoPlaying = true;
+          return true;
+        }, () => { return false; })
+    }
   }
   toggleVideo() {
     let _dwt = this.DWObject;
@@ -893,7 +923,10 @@ export class DwtComponent implements OnInit, OnDestroy {
     if (this.videoPlaying) {
       this.videoPlaying = false;
       this.showVideoText = "Show Video";
-      return _dwt.Addon.Webcam.StopVideo();
+      if (this.bUseCameraViaDirectShow)
+        return _dwt.Addon.Webcam.StopVideo();
+      else
+        return _dwt.Addon.Camera.stop();
     } else
       return this.playVideo();
   }

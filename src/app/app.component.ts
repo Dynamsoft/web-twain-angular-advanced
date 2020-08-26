@@ -20,11 +20,14 @@ export class AppComponent implements OnInit {
   bStartUp = true;
   bNoInstall = false;
   bMobile = false;
+  bShowCameraOption = false;
+  bUseCameraViaDirectShow = false;
   constructor(protected dwtService: DwtService) { }
 
   toggleStartDemo() {
     this.bStartUp = !this.bStartUp;
     this.dwtService.bUseService = !this.bNoInstall;
+    this.dwtService.bUseCameraViaDirectShow = this.bUseCameraViaDirectShow && !this.bNoInstall;
   }
   ngOnInit() {
     let env = this.dwtService.runningEnvironment;
@@ -34,6 +37,8 @@ export class AppComponent implements OnInit {
       this.currentEnv += env.bFirefox ? "Firefox " + env.strFirefoxVersion : "";
       this.currentEnv += env.bSafari ? "Safari" : "";
     } else {
+      if (env.bWin)
+        this.bShowCameraOption = true;
       this.currentEnv += env.isX64 ? "64bit " : "32bit ";
       this.currentEnv += env.bWin ? "Windows, " : "";
       this.currentEnv += env.bMac ? "macOS " + env.macOSX + " " + env.osVersion + ", " : "";
