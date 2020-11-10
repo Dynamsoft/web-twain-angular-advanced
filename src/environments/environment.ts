@@ -6,7 +6,7 @@ export const environment = {
   production: false,
   Dynamsoft: {
     resourcesPath: 'assets/dwt-resources',
-    dwtProductKey: 't0102MQEAAFL4GiiJnvpjSMifElJ8wiBBu9gg2Qj7H8AxfWKMtm8aS2QOBZ+1e6mqUpKNRwaInJLXm4NaYuKpF1cdzdIWcONnZAZ5jPlM4dce/ulKETjaWFr9LpWb+cwxTWIWrQMSMD0Q',
+    dwtProductKey: 't0138vQIAACX4UGA3xkqOZV2ZBimulROAZ+VsvTQqdhrWwMW0Sp3Ajl2O/3hMIJ8Pei+XfCiinVLe/KB53Gb24QwfQ57femCTbGCwFkAPIh1eT4XdGc6NfzvJYwEjI7N5V3Z21g7t9PVyw69Bx1RcDzEjAcO58VngZl4yrufXSMBwbvr1gFsmM96cDI6i',
     uploadTargetURL: ''
   }
 };

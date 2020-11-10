@@ -16,16 +16,9 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have as title 'dwt-angular-advanced'`, () => {
+  it(`should have as title 'DWT + Angular Sample'`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('dwt-angular-advanced');
-  });
-
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement;
-    expect(compiled.querySelector('.content span').textContent).toContain('dwt-angular-advanced app is running!');
+    expect(app.title).toEqual('DWT + Angular Sample');
   });
 });

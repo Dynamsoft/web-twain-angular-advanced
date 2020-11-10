@@ -180,6 +180,15 @@ export class DwtService {
        */
       let checkScript = () => {
         if (Dynamsoft.Lib.detect.scriptLoaded) {
+          /*  Dynamsoft.WebTwainEnv.OnWebTwainPreExecute = () => {
+              // Show your own progress indicator
+              console.log('An operation starts!');
+            };
+            Dynamsoft.WebTwainEnv.OnWebTwainPostExecute = () => {
+              // Hide the progress indicator
+              console.log('An operation ends!');
+            };
+            */
           if (this.runningEnvironment.bMobile) {
             Dynamsoft.WebTwainEnv.UseLocalService = false;
           } else {
@@ -190,10 +199,13 @@ export class DwtService {
             }
           }
           this.bWASM = this.runningEnvironment.bMobile || !Dynamsoft.WebTwainEnv.UseLocalService;
+
           Dynamsoft.WebTwainEnv.CreateDWTObjectEx(
             dwtInitialConfig,
             (_DWObject) => {
               this._DWObject = _DWObject;
+              /*this._DWObject.IfShowProgressBar = false;
+              this._DWObject.IfShowCancelDialogWhenImageTransfer = false;*/
               /**
                * The event OnBitmapChanged is used here for monitoring the image buffer.
                */
