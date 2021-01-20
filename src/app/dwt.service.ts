@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { environment } from './../environments/environment';
 import Dynamsoft from 'dwt';
-import { DynamsoftEnums } from 'dwt/Dynamsoft.Enum';
-import { WebTwain } from 'dwt/WebTwain';
-import { DeviceConfiguration, ScanSetup } from 'dwt/WebTwain.Acquire';
-import { RuntimeSettings, TextResults, TextResult } from 'dwt/Addon.BarcodeReader';
-import { OCRPro, Rect } from 'dwt/Addon.OCRPro';
-import { DWTInitialConfig } from 'dwt/Dynamsoft';
+import { DynamsoftEnums } from 'dwt/dist/types/Dynamsoft.Enum';
+import { WebTwain } from 'dwt/dist/types/WebTwain';
+import { DeviceConfiguration, ScanSetup } from 'dwt/dist/types/WebTwain.Acquire';
+import { RuntimeSettings, TextResults, TextResult } from 'dwt/dist/types/Addon.BarcodeReader';
+import { OCRPro, Rect } from 'dwt/dist/types/Addon.OCRPro';
+import { DWTInitialConfig } from 'dwt/dist/types/Dynamsoft';
 
 @Injectable({
   providedIn: 'root'

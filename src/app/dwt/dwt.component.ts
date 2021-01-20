@@ -1,7 +1,9 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { DwtService, Device } from './../dwt.service';
-import { WebTwain } from 'dwt/WebTwain';
-import { BasicViewerConfig } from 'dwt/WebTwain.Viewer';
+import { WebTwain } from 'dwt/dist/types/WebTwain';
+import { ThumbnailViewer } from 'dwt/dist/types/WebTwain.Viewer';
+import { ThumbnailViewerSettings } from 'dwt/dist/types/WebTwain.Viewer';
+import { ViewMode } from 'dwt/dist/types/WebTwain.Viewer';
 import { Subscription, Observable, empty } from 'rxjs';
 import Dynamsoft from 'dwt';
 import { NgbModal, NgbModalRef, } from '@ng-bootstrap/ng-bootstrap';
@@ -44,7 +46,7 @@ export class DwtComponent implements OnInit, OnDestroy {
   public devices: Device[];
   public showDevices: boolean = false;
   public deviceName: string = "Choose...";
-  public basicView: BasicViewerConfig;
+  public thumbnail: ThumbnailViewer;
   public emptyBuffer: boolean = true;
   public zones: Zone[] = [];
   public mainViewerPos = { x: 0, y: 0 };
@@ -310,7 +312,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       let currentIndex = this.DWObject.ImageIDToIndex(this.barcodeRects.imageIds[i]);
       if (this.DWObject.CurrentImageIndexInBuffer === currentIndex) {
         let rectsOnOnePage = this.barcodeRects.rects[i];
-        let mainViewer = <HTMLDivElement>document.querySelector("#" + this.containerId + " .DVS_content");
+        let mainViewer = <HTMLDivElement>document.querySelector("#" + this.containerId + " .dvs-container");
         let zoom = 0,
           viewerWidth = <number>mainViewer.offsetWidth,
           viewerHeight = <number>mainViewer.offsetHeight,
@@ -342,18 +344,17 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   updateViewer() {
-    this.basicView = {
-      Height: "100%",
-      Width: "100%",
-      view: { bShow: true, Width: "80%" }
-    }
-    if (this.DWObject && this.DWObject.UpdateViewer(this.basicView))
+	this.thumbnail = this.DWObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});
+	this.DWObject.Viewer.width = "100%";
+	this.DWObject.Viewer.height = "100%";
+	this.thumbnail.show();
+    if (this.DWObject)
       return true;
     else
       return false;
   }
   unBindViewer() {
-    if (this.DWObject.UnbindViewer()) {
+    if (this.DWObject.Viewer.unbind()) {
       let container = document.getElementById(this.containerId);
       while (container.firstChild) {
         container.removeChild(container.lastChild);
@@ -367,35 +368,37 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   bindViewer() {
-    this.basicView = {
-      Height: "100%",
-      Width: "100%",
-      view: { bShow: true, Width: "80%" }
-    }
-    if (this.DWObject.BindViewer(this.containerId, this.basicView)) {
-      // Remove the context menu which is still not functioning correctly.
-      this.DWObject.Viewer.off('imageRightClick');
-      this.DWObject.RegisterEvent('OnImageAreaSelected', (nImageIndex, left, top, right, bottom, sAreaIndex) => {
-        this.clearMessage();
-        if (sAreaIndex > this.zones.length + 1) {
-          this.showMessage("Impossible Area selected!");
-          return;
-        }
-        if (this.zones.length + 1 === sAreaIndex)
-          this.zones.push({ x: left, y: top, width: right - left, height: bottom - top, index: nImageIndex });
-        else
-          this.zones.splice(sAreaIndex - 1, 1, { x: left, y: top, width: right - left, height: bottom - top, index: nImageIndex });
-      });
-      this.DWObject.RegisterEvent('OnImageAreaDeSelected', () => {
+    this.DWObject.Viewer.bind(<HTMLDivElement>document.getElementById(this.containerId));
+	this.DWObject.Viewer.width = "100%";
+	this.DWObject.Viewer.height = "100%";
+	this.thumbnail = this.DWObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});	
+	if (this.thumbnail) {
+		this.DWObject.Viewer.show();
+		this.thumbnail.show();
+		// Remove the context menu which is still not functioning correctly.
+		this.DWObject.Viewer.off('imageRightClick');
+		this.DWObject.Viewer.on('pageAreaSelected', (nImageIndex, rect) => {
+			if (rect.length > 0) {
+				this.clearMessage();
+				var currentRect = rect[rect.length - 1];
+				if (rect.length > this.zones.length + 1) {
+				  this.showMessage("Impossible Area selected!");
+				  return;
+				}
+				if (this.zones.length + 1 === rect.length)
+				  this.zones.push({ x: currentRect.x, y: currentRect.y, width: currentRect.x + currentRect.width, height: currentRect.y + currentRect.height, index: nImageIndex });
+				else
+				  this.zones.splice(rect.length - 1, 1, { x: currentRect.x, y: currentRect.y, width: currentRect.x + currentRect.width, height: currentRect.y + currentRect.height, index: nImageIndex });
+			}
+		});
+      this.DWObject.Viewer.on('OnImageAreaDeSelected', () => {
         this.clearMessage(); this.zones = [];
       });
-      this.bMobile ? this.DWObject.Viewer.operationMode = 0 : this.DWObject.Viewer.operationMode = 1;
-      this.DWObject.Viewer.showFooter = false;
-      this.DWObject.Viewer.showHeader = false;
-      this.DWObject.ShowPageNumber = true;
+      this.bMobile ? this.DWObject.Viewer.cursor = 'pointer' : this.DWObject.Viewer.cursor = 'crosshair';
+      this.DWObject.Viewer.showPageNumber = true;
       //this.DWObject.Viewer.off('imageRightClick');
-      this.bMobile ? this.DWObject.Viewer.setViewMode(1, 5) :
-        this.DWObject.Viewer.setViewMode(1, 3);
+      this.bMobile ? this.thumbnail.updateViewMode(<ViewMode>{columns: 1, rows: 5}) :
+        this.thumbnail.updateViewMode(<ViewMode>{columns: 1, rows: 3});
       if (document.getElementById(this.containerId + "-fileInput"))
         // Only allow one such input on the page
         return;
@@ -449,7 +452,7 @@ export class DwtComponent implements OnInit, OnDestroy {
             }, err => this.showMessage(err));
           setTimeout(() => {
             this.bindViewer();
-            this.DWObject.Viewer.imageMargin = 10;
+            this.DWObject.Viewer.pageMargin = 10;
           }, 0);
         },
         err => this.showMessage(err));
@@ -477,7 +480,7 @@ export class DwtComponent implements OnInit, OnDestroy {
               }
             } else {
               this.deviceName = "Choose...";
-              return this.VideoContainer.UnbindViewer();
+              return this.VideoContainer.Viewer.unbind();
             }
           case "barcode":
             let __interval = setInterval(
@@ -535,11 +538,10 @@ export class DwtComponent implements OnInit, OnDestroy {
             this.currentOption = "";
             this.currentItem = "";
             this.currentOptionItems = [];
-            this.VideoContainer.BindViewer(this.videoContainerId, {
-              Height: "100%",
-              Width: "100%",
-              view: { bShow: false, Width: "80%" }
-            });
+            this.VideoContainer.Viewer.bind(<HTMLDivElement>document.getElementById(this.videoContainerId));
+			this.VideoContainer.Viewer.width = "100%";
+			this.VideoContainer.Viewer.height = "100%";
+			this.VideoContainer.Viewer.show();
           }
           else
             setTimeout(() => makeSureDIVExists(), 10);
@@ -582,7 +584,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.modalRef.dismiss();
   }
   openCamera() {
-    this.DWObject.Viewer.showVideo();
+    this.DWObject.Addon.Camera.showVideo();
   }
   handleDeviceChange(deviceType: string) {
     if (this.deviceName === "" || this.deviceName === "Choose...")
@@ -895,8 +897,10 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
     else
       this.DWObject.Addon.Camera.stop();
-    if (this.VideoContainer)
+    
+	if (this.VideoContainer)
       _dwt = this.VideoContainer;
+
     if (this.VideoContainer === null) {
       this.showMessage("No Video Container!");
       return false;
@@ -908,7 +912,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       });
       return true;
     } else {
-      _dwt.Addon.Camera.play(document.getElementById(this.videoContainerId))
+      _dwt.Addon.Camera.play()
         .then(() => {
           this.showVideoText = "Stop Video";
           this.videoPlaying = true;
