@@ -4,6 +4,7 @@ import { WebTwain } from 'dwt/dist/types/WebTwain';
 import { ThumbnailViewer } from 'dwt/dist/types/WebTwain.Viewer';
 import { ThumbnailViewerSettings } from 'dwt/dist/types/WebTwain.Viewer';
 import { ViewMode } from 'dwt/dist/types/WebTwain.Viewer';
+import { ViewerEvent } from 'dwt/dist/types/WebTwain.Viewer';
 import { Subscription, Observable, empty } from 'rxjs';
 import Dynamsoft from 'dwt';
 import { NgbModal, NgbModalRef, } from '@ng-bootstrap/ng-bootstrap';
@@ -377,18 +378,23 @@ export class DwtComponent implements OnInit, OnDestroy {
 		this.thumbnail.show();
 		// Remove the context menu which is still not functioning correctly.
 		this.DWObject.Viewer.off('imageRightClick');
-		this.DWObject.RegisterEvent('OnImageAreaSelected', (nImageIndex, left, top, right, bottom, sAreaIndex) => {
-        this.clearMessage();
-        if (sAreaIndex > this.zones.length + 1) {
-          this.showMessage("Impossible Area selected!");
-          return;
-        }
-        if (this.zones.length + 1 === sAreaIndex)
-          this.zones.push({ x: left, y: top, width: right - left, height: bottom - top, index: nImageIndex });
-        else
-          this.zones.splice(sAreaIndex - 1, 1, { x: left, y: top, width: right - left, height: bottom - top, index: nImageIndex });
-      });
-      this.DWObject.RegisterEvent('OnImageAreaDeSelected', () => {
+		this.DWObject.Viewer.on('pageAreaSelected', (nImageIndex, rect) => {
+			if (rect.length > 0) {
+				this.clearMessage();
+				var currentRect = rect[rect.length - 1];
+				if (rect.length > this.zones.length + 1) {
+				  this.showMessage("Impossible Area selected!");
+				  return;
+				}
+				if(rect.length == 1)
+					this.zones = [];
+				if (this.zones.length + 1 === rect.length)
+				  this.zones.push({ x: currentRect.x, y: currentRect.y, width: currentRect.x + currentRect.width, height: currentRect.y + currentRect.height, index: nImageIndex });
+				else
+				  this.zones.splice(rect.length - 1, 1, { x: currentRect.x, y: currentRect.y, width: currentRect.x + currentRect.width, height: currentRect.y + currentRect.height, index: nImageIndex });
+			}
+		});
+      this.DWObject.Viewer.on('OnImageAreaDeSelected', () => {
         this.clearMessage(); this.zones = [];
       });
       this.bMobile ? this.DWObject.Viewer.cursor = 'pointer' : this.DWObject.Viewer.cursor = 'crosshair';
