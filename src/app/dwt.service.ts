@@ -95,14 +95,14 @@ export class DwtService {
     { desc: "Image-over-text PDF", val: 2 }
   ];
   public OCRProFindTextFlags = [
-    { desc: "whole word", val: Dynamsoft.EnumDWT_OCRFindTextFlags.OCRFT_WHOLEWORD },
-    { desc: "match case", val: Dynamsoft.EnumDWT_OCRFindTextFlags.OCRFT_MATCHCASE },
-    { desc: "fuzzy match", val: Dynamsoft.EnumDWT_OCRFindTextFlags.OCRFT_FUZZYMATCH }
+    { desc: "whole word", val: Dynamsoft.DWT.EnumDWT_OCRFindTextFlags.OCRFT_WHOLEWORD },
+    { desc: "match case", val: Dynamsoft.DWT.EnumDWT_OCRFindTextFlags.OCRFT_MATCHCASE },
+    { desc: "fuzzy match", val: Dynamsoft.DWT.EnumDWT_OCRFindTextFlags.OCRFT_FUZZYMATCH }
   ];
   public OCRProFindTextAction = [
-    { desc: "highlight", val: Dynamsoft.EnumDWT_OCRFindTextAction.OCRFT_HIGHLIGHT },
-    { desc: "strikeout", val: Dynamsoft.EnumDWT_OCRFindTextAction.OCRFT_STRIKEOUT },
-    { desc: "mark for redact", val: Dynamsoft.EnumDWT_OCRFindTextAction.OCRFT_MARKFORREDACT }
+    { desc: "highlight", val: Dynamsoft.DWT.EnumDWT_OCRFindTextAction.OCRFT_HIGHLIGHT },
+    { desc: "strikeout", val: Dynamsoft.DWT.EnumDWT_OCRFindTextAction.OCRFT_STRIKEOUT },
+    { desc: "mark for redact", val: Dynamsoft.DWT.EnumDWT_OCRFindTextAction.OCRFT_MARKFORREDACT }
   ];
   public OCRProLanguages = [
     { desc: "English", val: "eng" },
@@ -113,40 +113,40 @@ export class DwtService {
     { desc: "Spanish", val: "spanish" }
   ];
   public OCRProRecognitionModule = [
-    { desc: "auto", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_AUTO },
-    { desc: "most accurate", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_MOSTACCURATE },
-    { desc: "balanced", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_BALANCED },
-    { desc: "fastest", val: Dynamsoft.EnumDWT_OCRProRecognitionModule.OCRPM_FASTEST }
+    { desc: "auto", val: Dynamsoft.DWT.EnumDWT_OCRProRecognitionModule.OCRPM_AUTO },
+    { desc: "most accurate", val: Dynamsoft.DWT.EnumDWT_OCRProRecognitionModule.OCRPM_MOSTACCURATE },
+    { desc: "balanced", val: Dynamsoft.DWT.EnumDWT_OCRProRecognitionModule.OCRPM_BALANCED },
+    { desc: "fastest", val: Dynamsoft.DWT.EnumDWT_OCRProRecognitionModule.OCRPM_FASTEST }
   ];
   public OCRProOutputFormat = [
-    { desc: "STRING", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_TXTS },
-    { desc: "CSV", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_TXTCSV },
-    { desc: "Text Formatted", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_TXTF },
-    { desc: "XML", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_XML },
-    { desc: "PDF", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF },
-    { desc: "PDF with MRC compression", val: Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF_MRC }
+    { desc: "STRING", val: Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_TXTS },
+    { desc: "CSV", val: Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_TXTCSV },
+    { desc: "Text Formatted", val: Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_TXTF },
+    { desc: "XML", val: Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_XML },
+    { desc: "PDF", val: Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF },
+    { desc: "PDF with MRC compression", val: Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF_MRC }
   ];
   public OCRProPDFVersion = [
     { desc: "", val: "" },
-    { desc: "1.0", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_0 },
-    { desc: "1.1", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_1 },
-    { desc: "1.2", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_2 },
-    { desc: "1.3", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_3 },
-    { desc: "1.4", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_4 },
-    { desc: "1.5", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_5 },
-    { desc: "1.6", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_6 },
-    { desc: "1.7", val: Dynamsoft.EnumDWT_OCRProPDFVersion.OCRPPDFV_7 }
+    { desc: "1.0", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_0 },
+    { desc: "1.1", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_1 },
+    { desc: "1.2", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_2 },
+    { desc: "1.3", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_3 },
+    { desc: "1.4", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_4 },
+    { desc: "1.5", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_5 },
+    { desc: "1.6", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_6 },
+    { desc: "1.7", val: Dynamsoft.DWT.EnumDWT_OCRProPDFVersion.OCRPPDFV_7 }
   ];
   public OCRProPDFAVersion = [
     { desc: "", val: "" },
-    { desc: "pdf/a-1a", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_1A },
-    { desc: "pdf/a-1b", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_1B },
-    { desc: "pdf/a-2a", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2A },
-    { desc: "pdf/a-2b", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2B },
-    { desc: "pdf/a-2u", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2U },
-    { desc: "pdf/a-3a", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3A },
-    { desc: "pdf/a-3b", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3B },
-    { desc: "pdf/a-3u", val: Dynamsoft.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3U }
+    { desc: "pdf/a-1a", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_1A },
+    { desc: "pdf/a-1b", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_1B },
+    { desc: "pdf/a-2a", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2A },
+    { desc: "pdf/a-2b", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2B },
+    { desc: "pdf/a-2u", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_2U },
+    { desc: "pdf/a-3a", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3A },
+    { desc: "pdf/a-3b", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3B },
+    { desc: "pdf/a-3u", val: Dynamsoft.DWT.EnumDWT_OCRProPDFAVersion.OCRPPDFAV_3U }
   ];
   /**
    * Save
@@ -158,12 +158,12 @@ export class DwtService {
     /**
      * ResourcesPath & ProductKey must be set in order to use the library!
      */
-    Dynamsoft.WebTwainEnv.ResourcesPath = environment.Dynamsoft.resourcesPath;
-    Dynamsoft.WebTwainEnv.ProductKey = environment.Dynamsoft.dwtProductKey;
+    Dynamsoft.DWT.ResourcesPath = environment.Dynamsoft.resourcesPath;
+    Dynamsoft.DWT.ProductKey = environment.Dynamsoft.dwtProductKey;
     /**
      * ConnectToTheService is overwritten here for smoother install process.
      */
-    Dynamsoft.WebTwainEnv.ConnectToTheService = () => {
+    Dynamsoft.DWT.ConnectToTheService = () => {
       this.mountDWT();
     };
   }
@@ -180,27 +180,27 @@ export class DwtService {
        */
       let checkScript = () => {
         if (Dynamsoft.Lib.detect.scriptLoaded) {
-          /*  Dynamsoft.WebTwainEnv.OnWebTwainPreExecute = () => {
+          /*  Dynamsoft.DWT.OnWebTwainPreExecute = () => {
               // Show your own progress indicator
               console.log('An operation starts!');
             };
-            Dynamsoft.WebTwainEnv.OnWebTwainPostExecute = () => {
+            Dynamsoft.DWT.OnWebTwainPostExecute = () => {
               // Hide the progress indicator
               console.log('An operation ends!');
             };
             */
           if (this.runningEnvironment.bMobile) {
-            Dynamsoft.WebTwainEnv.UseLocalService = false;
+            Dynamsoft.DWT.UseLocalService = false;
           } else {
             if (UseService !== undefined)
-              Dynamsoft.WebTwainEnv.UseLocalService = UseService;
+              Dynamsoft.DWT.UseLocalService = UseService;
             else {
-              Dynamsoft.WebTwainEnv.UseLocalService = this.bUseService;
+              Dynamsoft.DWT.UseLocalService = this.bUseService;
             }
           }
-          this.bWASM = this.runningEnvironment.bMobile || !Dynamsoft.WebTwainEnv.UseLocalService;
+          this.bWASM = this.runningEnvironment.bMobile || !Dynamsoft.DWT.UseLocalService;
 
-          Dynamsoft.WebTwainEnv.CreateDWTObjectEx(
+          Dynamsoft.DWT.CreateDWTObjectEx(
             dwtInitialConfig,
             (_DWObject) => {
               this._DWObject = _DWObject;
@@ -242,7 +242,7 @@ export class DwtService {
   }
   unMountDWT(): Promise<any> {
     return new Promise((res, rej) => {
-      if (Dynamsoft.WebTwainEnv.DeleteDWTObject("dwtObject"))
+      if (Dynamsoft.DWT.DeleteDWTObject("dwtObject"))
         res(true);
       else
         rej(false);
@@ -259,7 +259,7 @@ export class DwtService {
         let dwtInitialConfig: DWTInitialConfig = {
           WebTwainId: "videoContainer"
         };
-        Dynamsoft.WebTwainEnv.CreateDWTObjectEx(
+        Dynamsoft.DWT.CreateDWTObjectEx(
           dwtInitialConfig,
           (_container) => {
             this._DWObjectEx = _container;
@@ -279,7 +279,7 @@ export class DwtService {
    */
   unMountVideoContainer(): Promise<any> {
     return new Promise((res, rej) => {
-      if (Dynamsoft.WebTwainEnv.DeleteDWTObject("videoContainer"))
+      if (Dynamsoft.DWT.DeleteDWTObject("videoContainer"))
         res(true);
       else
         rej(false);
@@ -425,12 +425,12 @@ export class DwtService {
         ? _resolutions[i] = { value: resolutions.Get(i).toString(), checked: true }
         : _resolutions[i] = { value: resolutions.Get(i).toString(), checked: false };
     }
-    _advancedSettings = Object.keys(Dynamsoft.EnumDWT_VideoProperty).map((_value) => { return { value: _value.substr(3) } });
+    _advancedSettings = Object.keys(Dynamsoft.DWT.EnumDWT_VideoProperty).map((_value) => { return { value: _value.substr(3) } });
     for (let i = 0; i < _advancedSettings.length; i++) {
       _advancedSettings[i].checked = false;
     }
     _advancedSettings[0].checked = true;
-    _advancedCameraSettings = Object.keys(Dynamsoft.EnumDWT_CameraControlProperty).map((_value) => { return { value: _value.substr(4) } });
+    _advancedCameraSettings = Object.keys(Dynamsoft.DWT.EnumDWT_CameraControlProperty).map((_value) => { return { value: _value.substr(4) } });
     for (let i = 0; i < _advancedCameraSettings.length; i++) {
       _advancedCameraSettings[i].checked = false;
     }
@@ -470,7 +470,7 @@ export class DwtService {
           if (this._DWObjectEx) {
             if (this.bUseCameraViaDirectShow) {
               this._DWObjectEx.Addon.Webcam.CaptureImage(() => {
-                this.getBlob([0], Dynamsoft.EnumDWT_ImageType.IT_PNG, this._DWObjectEx)
+                this.getBlob([0], Dynamsoft.DWT.EnumDWT_ImageType.IT_PNG, this._DWObjectEx)
                   .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
                     this._DWObjectEx.RemoveImage(0);
                     res(true);
@@ -516,7 +516,7 @@ export class DwtService {
    */
   load(files?: FileList): Promise<any> {
     return new Promise((res, rej) => {
-      this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.EnumDWT_ConvertMode.CM_DEFAULT);
+      this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.DWT.EnumDWT_ConvertMode.CM_DEFAULT);
       this._DWObject.Addon.PDF.SetResolution(200);
       if (this.bWASM && files.length > 0) {
         for (let i = 0; i < files.length; i++) {
@@ -530,7 +530,7 @@ export class DwtService {
         this._DWObject.RegisterEvent("OnPostLoad", (
           directory: string,
           fileName: string,
-          fileType: DynamsoftEnums.EnumDWT_ImageType) => {
+          fileType: DynamsoftEnums.DWT.EnumDWT_ImageType) => {
         });
         this._DWObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, fileName) => {
           if (index === filesCount - 1)
@@ -575,7 +575,7 @@ export class DwtService {
         } else {
           settings.scaleDownThreshold = 2300;
         }
-        settings.barcodeFormatIds = Dynamsoft.EnumBarcodeFormat.BF_ALL;
+        settings.barcodeFormatIds = Dynamsoft.DBR.EnumBarcodeFormat.BF_ALL;
         if (config) {
           if (config.formatId) {
             settings.barcodeFormatIds = config.formatId;
@@ -751,8 +751,8 @@ export class DwtService {
   }
   downloadOCRBasic(bDownloadDLL: boolean, langPath?: string): Promise<any> {
     return new Promise((res, rej) => {
-      let strOCRPath = Dynamsoft.WebTwainEnv.ResourcesPath + "/addon/OCRx64.zip";
-      let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
+      let strOCRPath = Dynamsoft.DWT.ResourcesPath + "/addon/OCRx64.zip";
+      let strOCRLangPath = Dynamsoft.DWT.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
       if (langPath)
         strOCRLangPath = langPath;
       if (bDownloadDLL) {
@@ -790,15 +790,15 @@ export class DwtService {
     let _index = this._DWObject.CurrentImageIndexInBuffer;
     if (zones) zones = this.filterZones(_index, zones);
     if (ocrOptions.engine === "basic") {
-      let language: DynamsoftEnums.EnumDWT_OCRLanguage = <DynamsoftEnums.EnumDWT_OCRLanguage>ocrOptions.Language;
-      let outputFormat: DynamsoftEnums.EnumDWT_OCROutputFormat = parseInt(ocrOptions.OutputFormat);
+      let language: DynamsoftEnums.DWT.EnumDWT_OCRLanguage = <DynamsoftEnums.DWT.EnumDWT_OCRLanguage>ocrOptions.Language;
+      let outputFormat: DynamsoftEnums.DWT.EnumDWT_OCROutputFormat = parseInt(ocrOptions.OutputFormat);
       return new Promise((res, rej) => {
         this._DWObject.Addon.OCR.SetLanguage(language);
         this._DWObject.Addon.OCR.SetOutputFormat(outputFormat);
-        let strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
+        let strOCRLangPath = Dynamsoft.DWT.ResourcesPath + '/addon/OCRBasicLanguages/English.zip';
         for (let i = 0; i < this.OCRLanguages.length; i++) {
           if (this.OCRLanguages[i].val === language) {
-            strOCRLangPath = Dynamsoft.WebTwainEnv.ResourcesPath + '/addon/OCRBasicLanguages/' + this.OCRLanguages[i].desc + '.zip';
+            strOCRLangPath = Dynamsoft.DWT.ResourcesPath + '/addon/OCRBasicLanguages/' + this.OCRLanguages[i].desc + '.zip';
           }
         }
         this.downloadOCRBasic(false)
@@ -837,8 +837,8 @@ export class DwtService {
         settings.Languages = ocrOptions.Language;
         settings.RecognitionModule = (<OCRProOptions>ocrOptions).RecognitionModule;
         settings.OutputFormat = (<OCRProOptions>ocrOptions).OutputFormat;
-        if ((<OCRProOptions>ocrOptions).OutputFormat === Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF ||
-          (<OCRProOptions>ocrOptions).OutputFormat === Dynamsoft.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF_MRC) {
+        if ((<OCRProOptions>ocrOptions).OutputFormat === Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF ||
+          (<OCRProOptions>ocrOptions).OutputFormat === Dynamsoft.DWT.EnumDWT_OCRProOutputFormat.OCRPFT_IOTPDF_MRC) {
           settings.PDFVersion = (<OCRProOptions>ocrOptions).PDFVersion;
           settings.PDFAVersion = (<OCRProOptions>ocrOptions).PDFAVersion;
         }
@@ -916,13 +916,13 @@ export class DwtService {
    * @param type Specify the type of the Blob.
    * @param dwt Specify the WebTwain instance doing the job.
    */
-  getBlob(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
+  getBlob(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
       let _dwt = this._DWObject;
       if (dwt)
         _dwt = dwt;
       switch (type) {
-        case Dynamsoft.EnumDWT_ImageType.IT_ALL:
+        case Dynamsoft.DWT.EnumDWT_ImageType.IT_ALL:
           rej("Must specify an image type!"); break;
       }
       _dwt.ConvertToBlob(indices, type, (result, indices, type) => {
@@ -938,12 +938,12 @@ export class DwtService {
    * @param type Specify the type of the Base64 string.
    * @param dwt Specify the WebTwain instance doing the job.
    */
-  getBase64(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
+  getBase64(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
       let _dwt = this._DWObject;
       if (dwt)
         _dwt = dwt;
-      if (type === Dynamsoft.EnumDWT_ImageType.IT_ALL)
+      if (type === Dynamsoft.DWT.EnumDWT_ImageType.IT_ALL)
         rej("Must specify an image type!");
       _dwt.ConvertToBase64(indices, type, (result, indices, type) => {
         let _result = result.getData(0, result.getLength());
@@ -972,7 +972,7 @@ export class DwtService {
    * Return the extention string of the specified image type.
    * @param type The image type (number).
    */
-  getExtension(type: DynamsoftEnums.EnumDWT_ImageType) {
+  getExtension(type: DynamsoftEnums.DWT.EnumDWT_ImageType) {
     switch (type) {
       case 0: return ".bmp";
       case 1: return ".jpg";
@@ -986,7 +986,7 @@ export class DwtService {
    * Return the file filter for the save-file dialog based on the image type.
    * @param type The image type (number).
    */
-  getDialogFilter(type: DynamsoftEnums.EnumDWT_ImageType): string {
+  getDialogFilter(type: DynamsoftEnums.DWT.EnumDWT_ImageType): string {
     let filter = "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg";
     switch (type) {
       case 0: filter = "BMP|*.bmp"; break;
@@ -1016,7 +1016,7 @@ export class DwtService {
    * @param fileName Specify the file name.
    * @param showDialog Specify whether to show a saving dialog.
    */
-  saveLocally(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, fileName: string, showDialog: boolean): Promise<any> {
+  saveLocally(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, fileName: string, showDialog: boolean): Promise<any> {
     return new Promise((res, rej) => {
       let saveInner = (_path, _name, _type): Promise<any> => {
         return new Promise((res, rej) => {
@@ -1066,7 +1066,7 @@ export class DwtService {
    * @param type Specify the type of the target file.
    * @param fileName Specify the file name.
    */
-  uploadToServer(indices: number[], type: DynamsoftEnums.EnumDWT_ImageType, fileName: string): Promise<any> {
+  uploadToServer(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, fileName: string): Promise<any> {
     return new Promise((res, rej) => {
       fileName = fileName + this.getExtension(type);
       let url = "", savedDir = "";
@@ -1092,7 +1092,7 @@ export class DwtService {
         url,
         indices,
         type,
-        Dynamsoft.EnumDWT_UploadDataFormat.Binary,
+        Dynamsoft.DWT.EnumDWT_UploadDataFormat.Binary,
         fileName,
         () => {
           res({ name: fileName, url: savedDir + fileName });

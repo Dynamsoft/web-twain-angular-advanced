@@ -768,24 +768,24 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
     this.barcodeButtonText = "Reading...";
     let formatId = 0, formatId2 = 0;
-    this.barcodeReaderOptions.Symbologies.Aztec ? formatId += Dynamsoft.EnumBarcodeFormat.BF_AZTEC : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.DM ? formatId += Dynamsoft.EnumBarcodeFormat.BF_DATAMATRIX : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.Dot ? formatId2 += Dynamsoft.EnumBarcodeFormat_2.BF2_DOTCODE : formatId2 += 0;
-    this.barcodeReaderOptions.Symbologies.GS1Composite ? formatId += Dynamsoft.EnumBarcodeFormat.BF_GS1_COMPOSITE : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.GS1Databar ? formatId += Dynamsoft.EnumBarcodeFormat.BF_GS1_DATABAR : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.Linear ? formatId += Dynamsoft.EnumBarcodeFormat.BF_ONED : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.Maxi ? formatId += Dynamsoft.EnumBarcodeFormat.BF_MAXICODE : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.Patch ? formatId += Dynamsoft.EnumBarcodeFormat.BF_PATCHCODE : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.Pdf ? formatId += Dynamsoft.EnumBarcodeFormat.BF_PDF417 + Dynamsoft.EnumBarcodeFormat.BF_MICRO_PDF417 : formatId += 0;
-    this.barcodeReaderOptions.Symbologies.QRCode ? formatId += Dynamsoft.EnumBarcodeFormat.BF_QR_CODE + Dynamsoft.EnumBarcodeFormat.BF_MICRO_QR : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.Aztec ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_AZTEC : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.DM ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_DATAMATRIX : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.Dot ? formatId2 += Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_DOTCODE : formatId2 += 0;
+    this.barcodeReaderOptions.Symbologies.GS1Composite ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_GS1_COMPOSITE : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.GS1Databar ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_GS1_DATABAR : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.Linear ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_ONED : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.Maxi ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_MAXICODE : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.Patch ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_PATCHCODE : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.Pdf ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_PDF417 + Dynamsoft.DBR.EnumBarcodeFormat.BF_MICRO_PDF417 : formatId += 0;
+    this.barcodeReaderOptions.Symbologies.QRCode ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_QR_CODE + Dynamsoft.DBR.EnumBarcodeFormat.BF_MICRO_QR : formatId += 0;
     this.barcodeReaderOptions.Symbologies.Postal ?
       formatId2 +=
-      Dynamsoft.EnumBarcodeFormat_2.BF2_POSTALCODE
-      + Dynamsoft.EnumBarcodeFormat_2.BF2_POSTNET
-      + Dynamsoft.EnumBarcodeFormat_2.BF2_AUSTRALIANPOST
-      + Dynamsoft.EnumBarcodeFormat_2.BF2_USPSINTELLIGENTMAIL
-      + Dynamsoft.EnumBarcodeFormat_2.BF2_RM4SCC
-      + Dynamsoft.EnumBarcodeFormat_2.BF2_PLANET
+      Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_POSTALCODE
+      + Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_POSTNET
+      + Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_AUSTRALIANPOST
+      + Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_USPSINTELLIGENTMAIL
+      + Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_RM4SCC
+      + Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_PLANET
       : formatId2 += 0;
     this.barcodeRectsOnCurrentImage.splice(0, this.barcodeRectsOnCurrentImage.length);
     this.filterZones();
@@ -856,11 +856,11 @@ export class DwtComponent implements OnInit, OnDestroy {
         let bCamera = true;
         if (config.prop === "Video Setup") {
           bCamera = false;
-          basicSetting = _dwt.Addon.Webcam.GetVideoPropertySetting(Dynamsoft.EnumDWT_VideoProperty["VP_" + config.value]);
-          moreSetting = _dwt.Addon.Webcam.GetVideoPropertyMoreSetting(Dynamsoft.EnumDWT_VideoProperty["VP_" + config.value]);
+          basicSetting = _dwt.Addon.Webcam.GetVideoPropertySetting(Dynamsoft.DWT.EnumDWT_VideoProperty["VP_" + config.value]);
+          moreSetting = _dwt.Addon.Webcam.GetVideoPropertyMoreSetting(Dynamsoft.DWT.EnumDWT_VideoProperty["VP_" + config.value]);
         } else {
-          basicSetting = _dwt.Addon.Webcam.GetCameraControlPropertySetting(Dynamsoft.EnumDWT_CameraControlProperty["CCP_" + config.value]);
-          moreSetting = _dwt.Addon.Webcam.GetCameraControlPropertyMoreSetting(Dynamsoft.EnumDWT_CameraControlProperty["CCP_" + config.value]);
+          basicSetting = _dwt.Addon.Webcam.GetCameraControlPropertySetting(Dynamsoft.DWT.EnumDWT_CameraControlProperty["CCP_" + config.value]);
+          moreSetting = _dwt.Addon.Webcam.GetCameraControlPropertyMoreSetting(Dynamsoft.DWT.EnumDWT_CameraControlProperty["CCP_" + config.value]);
         }
         let value = basicSetting.GetValue(),
           min = moreSetting.GetMinValue(),
@@ -942,8 +942,8 @@ export class DwtComponent implements OnInit, OnDestroy {
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     this.rangePicker.bCamera
-      ? _dwt.Addon.Webcam.SetCameraControlPropertySetting(Dynamsoft.EnumDWT_CameraControlProperty["CCP_" + this.rangePicker.title], this.rangePicker.default, true)
-      : _dwt.Addon.Webcam.SetVideoPropertySetting(Dynamsoft.EnumDWT_VideoProperty["VP_" + this.rangePicker.title], this.rangePicker.default, true);
+      ? _dwt.Addon.Webcam.SetCameraControlPropertySetting(Dynamsoft.DWT.EnumDWT_CameraControlProperty["CCP_" + this.rangePicker.title], this.rangePicker.default, true)
+      : _dwt.Addon.Webcam.SetVideoPropertySetting(Dynamsoft.DWT.EnumDWT_VideoProperty["VP_" + this.rangePicker.title], this.rangePicker.default, true);
     this.rangePicker.value = this.rangePicker.default;
   }
   handleRangeChange() {
@@ -951,8 +951,8 @@ export class DwtComponent implements OnInit, OnDestroy {
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     this.rangePicker.bCamera
-      ? _dwt.Addon.Webcam.SetCameraControlPropertySetting(Dynamsoft.EnumDWT_CameraControlProperty["CCP_" + this.rangePicker.title], this.rangePicker.value, false)
-      : _dwt.Addon.Webcam.SetVideoPropertySetting(Dynamsoft.EnumDWT_VideoProperty["VP_" + this.rangePicker.title], this.rangePicker.value, false);
+      ? _dwt.Addon.Webcam.SetCameraControlPropertySetting(Dynamsoft.DWT.EnumDWT_CameraControlProperty["CCP_" + this.rangePicker.title], this.rangePicker.value, false)
+      : _dwt.Addon.Webcam.SetVideoPropertySetting(Dynamsoft.DWT.EnumDWT_VideoProperty["VP_" + this.rangePicker.title], this.rangePicker.value, false);
   }
   outPutTypeChanged(newType) {
     switch (newType) {
@@ -971,7 +971,7 @@ export class DwtComponent implements OnInit, OnDestroy {
   getImageType(formatString: string): number {
     formatString = "IT_" + formatString;
     let imageType = 4;
-    Object.entries(Dynamsoft.EnumDWT_ImageType).forEach(_type => {
+    Object.entries(Dynamsoft.DWT.EnumDWT_ImageType).forEach(_type => {
       if (_type[0] === formatString)
         imageType = <number>_type[1];
     });
