@@ -638,7 +638,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       }, err => this.showMessage(err));
   }
   showEditor() {
-    this.DWObject.ShowImageEditor();
+    this.DWObject.Viewer.createImageEditor().show();
     this.DWObject.RegisterEvent('CloseImageEditorUI', () => {
       this.editorShown = false;
     });
