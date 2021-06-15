@@ -345,12 +345,13 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   updateViewer() {
-	this.thumbnail = this.DWObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});
-	this.DWObject.Viewer.width = "100%";
-	this.DWObject.Viewer.height = "100%";
-	this.thumbnail.show();
-    if (this.DWObject)
-      return true;
+    if (this.DWObject){
+		this.thumbnail = this.DWObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});
+		this.DWObject.Viewer.width = "100%";
+		this.DWObject.Viewer.height = "100%";
+		this.thumbnail.show();
+		return true;
+	}
     else
       return false;
   }
