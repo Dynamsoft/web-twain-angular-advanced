@@ -15,7 +15,7 @@ export class AppComponent implements OnInit {
     this.eventsSubject.next(event);
   }
   title = 'DWT + Angular Sample';
-  version = ' v17.0';
+  version = ' v17.1';
   currentEnv = "";
   bStartUp = true;
   bNoInstall = false;
@@ -49,5 +49,7 @@ export class AppComponent implements OnInit {
 		this.currentEnv += env.bIE ? "Internet Explorer" + env.strIEVersion : "";
 		this.currentEnv += env.bEdge ? "Edge" : "";
 	}
+	let curYear = <HTMLDivElement>document.getElementById("copyRightCurYear");
+	curYear.innerHTML = (new Date()).getFullYear().toString();
   }
 }

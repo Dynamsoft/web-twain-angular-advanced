@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
 import { environment } from './../environments/environment';
 import Dynamsoft from 'dwt';
-import { DynamsoftEnums } from 'dwt/dist/types/Dynamsoft.Enum';
+import { DynamsoftEnumsDWT } from 'dwt/dist/types/Dynamsoft.Enum';
 import { WebTwain } from 'dwt/dist/types/WebTwain';
 import { DeviceConfiguration, ScanSetup } from 'dwt/dist/types/WebTwain.Acquire';
 import { RuntimeSettings, TextResults, TextResult } from 'dwt/dist/types/Addon.BarcodeReader';
@@ -156,10 +156,31 @@ export class DwtService {
 
   constructor() {
     /**
-     * ResourcesPath & ProductKey must be set in order to use the library!
+     * ResourcesPath must be set in order to use the library!
      */
     Dynamsoft.DWT.ResourcesPath = environment.Dynamsoft.resourcesPath;
-    Dynamsoft.DWT.ProductKey = environment.Dynamsoft.dwtProductKey;
+  Dynamsoft.DWT.Containers = [{ WebTwainId: 'dwtcontrolContainer', Width: 270, Height: 350 }];
+
+	/** v17.1 LICENSE ALERT - README
+     * The library requires a license to work, the APIs organizationID and handshakeCode specify how to acquire a license.
+     * If nothing is specified, a 7-day (public) trial license will be used by default which is the case in this sample.
+     * Note that network connection is required for this license to work.
+     */
+
+    /* When using your own license, please uncomment the following lines and fill in your own information. */
+    /* For more information, please refer to https://www.dynamsoft.com/license-tracking/docs/about/licensefaq.html?ver=latest#how-to-use-a-trackable-license. */
+
+    // Dynamsoft.DWT.organizationID = "YOUR-ORGANIZATION-ID";
+    // Dynamsoft.DWT.handshakeCode = "A-SPECIFIC-HANDSHAKECODE";
+    // Dynamsoft.DWT.sessionPassword = "PASSWORD-TO-PROTECT-YOUR-LICENSE"; // Important field to protect your license.
+    // Dynamsoft.DWT.licenseServer = ["YOUR-OWN-MAIN-LTS", "YOUR-OWN-STANDBY-LTS"]; // Ignore this line if you are using Dynamsoft-hosting LTS
+
+    /* The API "ProductKey" is an alternative way to license the library, the major difference is that it does not require a network. Contact support@dynamsoft.com for more information. */
+
+    // Dynamsoft.DWT.ProductKey = "YOUR-PRODUCT-KEY";
+
+    /** LICENSE ALERT - THE END */
+	
     /**
      * ConnectToTheService is overwritten here for smoother install process.
      */
@@ -530,7 +551,7 @@ export class DwtService {
         this._DWObject.RegisterEvent("OnPostLoad", (
           directory: string,
           fileName: string,
-          fileType: DynamsoftEnums.DWT.EnumDWT_ImageType) => {
+          fileType: DynamsoftEnumsDWT.EnumDWT_ImageType) => {
         });
         this._DWObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, fileName) => {
           if (index === filesCount - 1)
@@ -790,8 +811,8 @@ export class DwtService {
     let _index = this._DWObject.CurrentImageIndexInBuffer;
     if (zones) zones = this.filterZones(_index, zones);
     if (ocrOptions.engine === "basic") {
-      let language: DynamsoftEnums.DWT.EnumDWT_OCRLanguage = <DynamsoftEnums.DWT.EnumDWT_OCRLanguage>ocrOptions.Language;
-      let outputFormat: DynamsoftEnums.DWT.EnumDWT_OCROutputFormat = parseInt(ocrOptions.OutputFormat);
+      let language: DynamsoftEnumsDWT.EnumDWT_OCRLanguage = <DynamsoftEnumsDWT.EnumDWT_OCRLanguage>ocrOptions.Language;
+      let outputFormat: DynamsoftEnumsDWT.EnumDWT_OCROutputFormat = parseInt(ocrOptions.OutputFormat);
       return new Promise((res, rej) => {
         this._DWObject.Addon.OCR.SetLanguage(language);
         this._DWObject.Addon.OCR.SetOutputFormat(outputFormat);
@@ -916,7 +937,7 @@ export class DwtService {
    * @param type Specify the type of the Blob.
    * @param dwt Specify the WebTwain instance doing the job.
    */
-  getBlob(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
+  getBlob(indices: number[], type: DynamsoftEnumsDWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
       let _dwt = this._DWObject;
       if (dwt)
@@ -938,7 +959,7 @@ export class DwtService {
    * @param type Specify the type of the Base64 string.
    * @param dwt Specify the WebTwain instance doing the job.
    */
-  getBase64(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
+  getBase64(indices: number[], type: DynamsoftEnumsDWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
       let _dwt = this._DWObject;
       if (dwt)
@@ -972,7 +993,7 @@ export class DwtService {
    * Return the extention string of the specified image type.
    * @param type The image type (number).
    */
-  getExtension(type: DynamsoftEnums.DWT.EnumDWT_ImageType) {
+  getExtension(type: DynamsoftEnumsDWT.EnumDWT_ImageType) {
     switch (type) {
       case 0: return ".bmp";
       case 1: return ".jpg";
@@ -986,7 +1007,7 @@ export class DwtService {
    * Return the file filter for the save-file dialog based on the image type.
    * @param type The image type (number).
    */
-  getDialogFilter(type: DynamsoftEnums.DWT.EnumDWT_ImageType): string {
+  getDialogFilter(type: DynamsoftEnumsDWT.EnumDWT_ImageType): string {
     let filter = "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg";
     switch (type) {
       case 0: filter = "BMP|*.bmp"; break;
@@ -1016,7 +1037,7 @@ export class DwtService {
    * @param fileName Specify the file name.
    * @param showDialog Specify whether to show a saving dialog.
    */
-  saveLocally(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, fileName: string, showDialog: boolean): Promise<any> {
+  saveLocally(indices: number[], type: DynamsoftEnumsDWT.EnumDWT_ImageType, fileName: string, showDialog: boolean): Promise<any> {
     return new Promise((res, rej) => {
       let saveInner = (_path, _name, _type): Promise<any> => {
         return new Promise((res, rej) => {
@@ -1066,7 +1087,7 @@ export class DwtService {
    * @param type Specify the type of the target file.
    * @param fileName Specify the file name.
    */
-  uploadToServer(indices: number[], type: DynamsoftEnums.DWT.EnumDWT_ImageType, fileName: string): Promise<any> {
+  uploadToServer(indices: number[], type: DynamsoftEnumsDWT.EnumDWT_ImageType, fileName: string): Promise<any> {
     return new Promise((res, rej) => {
       fileName = fileName + this.getExtension(type);
       let url = "", savedDir = "";
