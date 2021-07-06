@@ -537,7 +537,7 @@ export class DwtService {
    */
   load(files?: FileList): Promise<any> {
     return new Promise((res, rej) => {
-      this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.DWT.EnumDWT_ConvertMode.CM_DEFAULT);
+      this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.DWT.EnumDWT_ConvertMode.CM_AUTO);
       this._DWObject.Addon.PDF.SetResolution(200);
       if (this.bWASM && files.length > 0) {
         for (let i = 0; i < files.length; i++) {
