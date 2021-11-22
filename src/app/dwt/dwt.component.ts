@@ -551,10 +551,15 @@ export class DwtComponent implements OnInit, OnDestroy {
             setTimeout(() => makeSureDIVExists(), 10);
         };
         makeSureDIVExists();
+        this.clearMessage();
+        this.dwtService.getDevices(true)
+          .then(result => { this.devices = result; this.showDevices = true; }, err => this.showMessage(err.message));
+        this.deviceName = "Choose...";
+        break;
       case "acquire":
         this.clearMessage();
-        this.dwtService.getDevices()
-          .then(result => { this.devices = result; this.showDevices = true; }, err => this.showMessage(err));
+        this.dwtService.getDevices(false)
+          .then(result => { this.devices = result; this.showDevices = true; }, err => this.showMessage(err.message));
         this.deviceName = "Choose...";
         break;
       case "barcode":

@@ -289,7 +289,7 @@ export class DwtService {
   /**
    * Retrieve all devices (scanners + cameras).
    */
-  getDevices(): Promise<Device[]> {
+  getDevices(bfromCamera): Promise<Device[]> {
     return new Promise((res, rej) => {
       let _dwt = this._DWObject;
       if (this._DWObjectEx)
@@ -309,11 +309,19 @@ export class DwtService {
           let _cameras = _dwt.Addon.Webcam.GetSourceList();
           for (let i = 0; i < _cameras.length; i++) {
             this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + _cameras[i], label: _cameras[i], type: "camera" });
-          }
+          }  
           res(this.devices);
         } catch (e) {
-          rej(e);
+          if(bfromCamera)
+            rej(e);
+          else {
+            if(e.code == -2338)
+              res(this.devices);
+            else
+              rej(e);
+          }
         }
+        
       } else {
         _dwt.Addon.Camera.getSourceList()
           .then(_cameras => {
@@ -321,7 +329,16 @@ export class DwtService {
               this.devices.push({ deviceId: _cameras[i].deviceId, name: (i + 1).toString() + "." + _cameras[i].label, label: _cameras[i].label, type: "camera" });
             }
             res(this.devices);
-          }, err => rej(err));
+          }, err => {
+            if(bfromCamera)
+              rej(err);
+            else {
+              if(err.code == -2338)
+                res(this.devices);
+              else
+                rej(err);
+            }
+          });
       }
     });
   }
