@@ -160,7 +160,9 @@ export class DwtService {
      */
     Dynamsoft.DWT.ResourcesPath = environment.Dynamsoft.resourcesPath;
     Dynamsoft.DWT.ProductKey = environment.Dynamsoft.dwtProductKey;
-	  Dynamsoft.DWT.Containers = [{ WebTwainId: 'dwtcontrolContainer', Width: 270, Height: 350 }];
+    Dynamsoft.DWT.Containers = [{ WebTwainId: 'dwtcontrolContainer', Width: 270, Height: 350 }];
+    Dynamsoft.DWT.UseCameraAddonWasm = true;
+	Dynamsoft.DWT.Load();
     /**
      * ConnectToTheService is overwritten here for smoother install process.
      */
@@ -258,7 +260,7 @@ export class DwtService {
     return new Promise((res, rej) => {
       if (this._DWObject) {
         let dwtInitialConfig: DWTInitialConfig = {
-          WebTwainId: "videoContainer"
+          WebTwainId: "videoContainer" 
         };
         Dynamsoft.DWT.CreateDWTObjectEx(
           dwtInitialConfig,
