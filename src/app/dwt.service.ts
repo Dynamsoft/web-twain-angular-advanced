@@ -543,22 +543,13 @@ export class DwtService {
           this._DWObject.LoadImageFromBinary(files[i], () => { res(true); }, (errCode, errString) => { rej(errString); })
         }
       } else {
-        let filter = "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg";
-        if (Dynamsoft.Lib.env.bMac)
-          filter = "TIF,TIFF,JPG,JPEG,PNG,PDF";
         this._DWObject.IfShowFileDialog = true;
         this._DWObject.RegisterEvent("OnPostLoad", (
           directory: string,
           fileName: string,
           fileType: DynamsoftEnumsDWT.EnumDWT_ImageType) => {
         });
-        this._DWObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, fileName) => {
-          if (index === filesCount - 1)
-            this._DWObject.LoadImage(directory + "\\" + fileName, () => { res(true); }, (errCode, errStr) => rej(errStr));
-          else
-            this._DWObject.LoadImage(directory + "\\" + fileName, () => { }, (errCode, errStr) => rej(errStr));
-        });
-        this._DWObject.ShowFileDialog(false, filter, 0, "", "", true, false, 0);
+        this._DWObject.LoadImageEx("", -1,  () => { res(true); }, (errCode, errStr) => rej(errStr))
       }
     });
   }
