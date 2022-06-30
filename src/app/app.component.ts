@@ -39,9 +39,7 @@ export class AppComponent implements OnInit {
 	} else {
 		if (env.bWin)
 		  this.bShowCameraOption = true;
-		this.currentEnv += env.isX64 ? "64bit " : "32bit ";
 		this.currentEnv += env.bWin ? "Windows, " : "";
-		this.currentEnv += env.bMac ? "macOS " + env.macOSX + " " + env.osVersion + ", " : "";
 		this.currentEnv += env.bLinux ? "Linux, " : "";
 		this.currentEnv += env.bChrome ? "Chrome " + env.strChromeVersion : "";
 		this.currentEnv += env.bFirefox ? "Firefox " + env.strFirefoxVersion : "";
