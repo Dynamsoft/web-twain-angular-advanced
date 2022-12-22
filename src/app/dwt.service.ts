@@ -297,51 +297,50 @@ export class DwtService {
       if (this._DWObjectEx)
         _dwt = this._DWObjectEx;
       this.devices = [];
-      let count = this._DWObject.SourceCount;
-      let _scanners = <string[]>(this._DWObject.GetSourceNames());
-      if (count !== _scanners.length) {
-        rej('Possible wrong source count!');//not likely to happen
-      }
-      for (let i = 0; i < _scanners.length; i++) {
-        this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + _scanners[i], label: _scanners[i], type: "scanner" });
-      }
-      this._scannersCount = this.devices.length;
-      if (this.bUseCameraViaDirectShow) {
-        try {
-          let _cameras = _dwt.Addon.Webcam.GetSourceList();
-          for (let i = 0; i < _cameras.length; i++) {
-            this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + _cameras[i], label: _cameras[i], type: "camera" });
-          }  
-          res(this.devices);
-        } catch (e) {
-          if(bfromCamera)
-            rej(e);
-          else {
-            if(e.code == -2338)
-              res(this.devices);
-            else
-              rej(e);
-          }
-        }
-        
-      } else {
-        _dwt.Addon.Camera.getSourceList()
-          .then(_cameras => {
+      this._DWObject.GetDevicesAsync().then((devicesList)=>{
+        for (let i = 0; i < devicesList.length; i++) {
+          this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + devicesList[i].displayName, label: devicesList[i].displayName, type: "scanner", deviceInfo: devicesList[i] });
+        }           
+        this._scannersCount = this.devices.length;
+        if (this.bUseCameraViaDirectShow) {
+          try {
+            let _cameras = _dwt.Addon.Webcam.GetSourceList();
             for (let i = 0; i < _cameras.length; i++) {
-              this.devices.push({ deviceId: _cameras[i].deviceId, name: (i + 1).toString() + "." + _cameras[i].label, label: _cameras[i].label, type: "camera" });
-            }
+              this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + _cameras[i], label: _cameras[i], type: "camera", deviceInfo:[]});
+            }  
             res(this.devices);
-          }, err => {
+          } catch (e) {
             if(bfromCamera)
-              rej(err);
+              rej(e);
             else {
-              if(err.code == -2338)
+              if(e.code == -2338)
                 res(this.devices);
               else
-                rej(err);
+                rej(e);
             }
-          });
-      }
+          }
+          
+        } else {
+          _dwt.Addon.Camera.getSourceList()
+            .then(_cameras => {
+              for (let i = 0; i < _cameras.length; i++) {
+                this.devices.push({ deviceId: _cameras[i].deviceId, name: (i + 1).toString() + "." + _cameras[i].label, label: _cameras[i].label, type: "camera", deviceInfo:[]});
+              }
+              res(this.devices);
+            }, err => {
+              if(bfromCamera)
+                rej(err);
+              else {
+                if(err.code == -2338)
+                  res(this.devices);
+                else
+                  rej(err);
+              }
+            });
+        }
+        }).catch(function (exp) {
+          alert(exp.message);
+        });
     });
   }
   /**
@@ -398,9 +397,14 @@ export class DwtService {
             }
           }
           else {
-            if (this._DWObject.SelectSourceByIndex(index)) {
+            waitForAnotherPromise = true;
+            this._DWObject.SelectDeviceAsync(value.deviceInfo).then(()=>{
               this._selectedDevice = name;
-            }
+              this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
+              res(true);
+            }).catch((exp) =>{
+              rej(exp.message);
+            });
           }
         }
       });
@@ -509,20 +513,20 @@ export class DwtService {
           }
         } else {
           this._DWObject.SetOpenSourceTimeout(3000);
-          if (this._DWObject.OpenSource()) {
-            if (bAdvanced) {
+          if (bAdvanced) {
+            if (this._DWObject.OpenSource()){
               this._DWObject.startScan(<ScanSetup>config);
             } else {
-              this._DWObject.AcquireImage(<DeviceConfiguration>config, () => {
-                this._DWObject.CloseSource();
-                this._DWObject.CloseWorkingProcess();
-                res(true);
-              }, (errCode, errString) => {
-                rej(errString);
-              });
+              rej(this._DWObject.ErrorString);
             }
           } else {
-            rej(this._DWObject.ErrorString);
+            this._DWObject.AcquireImageAsync(<DeviceConfiguration>config).then(()=>{
+              return  this._DWObject.CloseSourceAsync();
+            }).then(()=>{
+              this._DWObject.CloseWorkingProcess();
+            }).catch((exp) =>{
+              rej(exp.message);
+            });
           }
         }
       } else {
@@ -1122,7 +1126,8 @@ export interface Device {
   deviceId: string,
   name: string,
   label: string,
-  type: string
+  type: string,
+  deviceInfo: any
 }
 
 interface Zone {
