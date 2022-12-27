@@ -1,52 +1,45 @@
-# DwtAngularAdvanced
+# Dynamic Web TWAIN Angular Advanced
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli).
+This project was bootstrapped with [Angular CLI](https://github.com/angular/angular-cli). It utilizes the SDK [Dynamic Web TWAIN](https://www.dynamsoft.com/Products/WebTWAIN_Overview.aspx) to provide the following functionalities.
 
-## What You Should Know
-- [![](https://img.shields.io/badge/Download-Offline%20SDK-orange)](https://www.dynamsoft.com/web-twain/downloads)
-- [![](https://img.shields.io/badge/Get-30--day%20FREE%20Trial%20License-blue)](https://www.dynamsoft.com/customer/license/trialLicense/?product=dwt)
+* Scan documents from physical scanners
+* Capture images from webcams
+* Load documents from local disk (bmp/jpg/png/tif/pdf)
+* View and process the documents already scanned/captured/loaded
+  * Editing (rotate/flip/mirror/crop, etc.)
+  * Saving or uploading
+  * Barcode reading
 
-## Development server
+## Usage
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+1. Apply for a [30-day free trial license](https://www.dynamsoft.com/customer/license/trialLicense?product=dwt) of Dynamic Web TWAIN.
 
-## Code scaffolding
+2. Update the license key in `document-scanner.component.ts` file:
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+   ```
+   Dynamsoft.DWT.ProductKey = "LICENSE-KEY";
+   ```
+
+3. Install the dependencies:
+
+   ```
+   npm install
+   ```
+
+4. Run the Angular application as follows:
+
+   ```
+   ng serve
+   ```
+
+5. Set up and run the server piece which is used solely for receiving uploaded files. Run the  command-line as follows:
+
+   ```
+   cd server
+   npm install
+   node server.js
+   ```
 
 ## Build
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-### `cd server` && `npm install` && `node server.js`
-
-Sets up and runs the server piece which is used solely for receiving uploaded files.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
-
-
-## NOTES
-
-In this version, type definitions of the `dwt` package is included in the package itself and is no longer fetched separately. The changes in the sample are
-
-* In package.json,  `"@types/dwt": "16.2"` is removed from "dependencies"
-* When importing a type definition, the source is changed. For example, 
-
-  + The old way: 
-	```
-	import { WebTwain } from 'dwt/WebTwain'; 
-	```
-  + The new way:
-	```
-	import { WebTwain } from 'dwt/dist/types/WebTwain';
-	```
