@@ -203,6 +203,7 @@ export class DwtService {
           }
           this.bWASM = this.runningEnvironment.bMobile || !Dynamsoft.DWT.UseLocalService;
 
+          dwtInitialConfig.UseLocalService = Dynamsoft.DWT.UseLocalService;
           Dynamsoft.DWT.CreateDWTObjectEx(
             dwtInitialConfig,
             (_DWObject) => {

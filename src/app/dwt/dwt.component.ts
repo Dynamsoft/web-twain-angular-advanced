@@ -593,7 +593,17 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.modalRef.dismiss();
   }
   openCamera() {
-    this.DWObject.Addon.Camera.showVideo();
+    this.DWObject.Addon.Camera.getSourceList().then((sources)=>{
+      if(sources && sources.length > 0)  
+          return this.DWObject.Addon.Camera.selectSource(sources[0].deviceId);
+      else {
+            throw {
+                message: 'no sources'
+            }
+        }
+    }).then(()=>{
+        return this.DWObject.Addon.Camera.showVideo();
+    }).catch(function(exp){console.log(exp.message);})
   }
   handleDeviceChange(deviceType: string) {
     if (this.deviceName === "" || this.deviceName === "Choose...")
@@ -715,6 +725,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   doOCR() {
+    
     this.ocrResultFiles = [];
     this.ocrResultURLs = [];
     this.ocrButtonText = "Recognizing";
