@@ -14,10 +14,15 @@ This project was bootstrapped with [Angular CLI](https://github.com/angular/angu
 
 1. Apply for a [30-day free trial license](https://www.dynamsoft.com/customer/license/trialLicense?product=dwt) of Dynamic Web TWAIN.
 
-2. Update the license key in `document-scanner.component.ts` file:
+2. Update the license key in two files `environment.ts` and `environment.prod.ts` :
 
    ```
-   Dynamsoft.DWT.ProductKey = "LICENSE-KEY";
+   export const environment = {
+     production: false,
+     Dynamsoft: {
+       dwtProductKey: 'LICENSE-KEY'
+     }
+   }
    ```
 
 3. Install the dependencies:
