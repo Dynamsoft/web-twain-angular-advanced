@@ -26,15 +26,8 @@ export class DwtService {
    * Global environment that is detected by the dwt library.
    */
   public runningEnvironment = Dynamsoft.Lib.env;
-  /**
-   * UseService only makes sense on desktop OS (Windows, macOS, Linux)
-   */
-  public bUseService = false;
-  /**
-   * bWASM is for WASM mode which is opposed to the Service mode.
-   * WASM mode could both be on desktop or mobile
-   */
-  public bWASM: boolean = false;
+
+  public bWin: boolean = true;
   /**
    * Scan
    */
@@ -49,7 +42,7 @@ export class DwtService {
    * The Webcam Addon vai DirectShow only works for Service mode on Desktop (dwt@16.1.1)
    * Otherwise, Camera Addon is used.
    */
-  public bUseCameraViaDirectShow: boolean = false;
+  public bUseCameraViaDirectShow: boolean = true;
   public cameraOptions = [];
   /**
    * Barcode
@@ -161,8 +154,7 @@ export class DwtService {
     Dynamsoft.DWT.ResourcesPath = environment.Dynamsoft.resourcesPath;
     Dynamsoft.DWT.ProductKey = environment.Dynamsoft.dwtProductKey;
     Dynamsoft.DWT.Containers = [{ WebTwainId: 'dwtcontrolContainer', Width: 270, Height: 350 }];
-    Dynamsoft.DWT.UseCameraAddonWasm = true;
-	Dynamsoft.DWT.Load();
+    Dynamsoft.DWT.Load();
     /**
      * ConnectToTheService is overwritten here for smoother install process.
      */
@@ -182,7 +174,6 @@ export class DwtService {
        * Therefore we must make sure these files are ready before creating a WebTwain instance.
        */
       let checkScript = () => {
-        if (Dynamsoft.Lib.detect.scriptLoaded) {
           /*  Dynamsoft.DWT.OnWebTwainPreExecute = () => {
               // Show your own progress indicator
               console.log('An operation starts!');
@@ -192,16 +183,8 @@ export class DwtService {
               console.log('An operation ends!');
             };
             */
-          if (this.runningEnvironment.bMobile) {
-            Dynamsoft.DWT.UseLocalService = false;
-          } else {
-            if (UseService !== undefined)
-              Dynamsoft.DWT.UseLocalService = UseService;
-            else {
-              Dynamsoft.DWT.UseLocalService = this.bUseService;
-            }
-          }
-          this.bWASM = this.runningEnvironment.bMobile || !Dynamsoft.DWT.UseLocalService;
+
+          this.bWin = this.runningEnvironment.bWin;
 
           dwtInitialConfig.UseLocalService = Dynamsoft.DWT.UseLocalService;
           Dynamsoft.DWT.CreateDWTObjectEx(
@@ -211,9 +194,9 @@ export class DwtService {
               /*this._DWObject.IfShowProgressBar = false;
               this._DWObject.IfShowCancelDialogWhenImageTransfer = false;*/
               /**
-               * The event OnBitmapChanged is used here for monitoring the image buffer.
+               * The event OnBufferChanged is used here for monitoring the image buffer.
                */
-              this._DWObject.RegisterEvent("OnBitmapChanged", (changedIndexArray, operationType, changedIndex, imagesCount) => {
+              this._DWObject.RegisterEvent("OnBufferChanged", (changedIndexArray, operationType, changedIndex, imagesCount) => {
                 switch (operationType) {
                   /** reserved space
                    * type: 1-Append(after index), 2-Insert(before index), 3-Remove, 4-Edit(Replace), 5-Index Change
@@ -237,9 +220,6 @@ export class DwtService {
               rej(errorString);
             }
           );
-        } else {
-          setTimeout(() => checkScript(), 100);
-        }
       };
       checkScript();
     });
@@ -321,24 +301,7 @@ export class DwtService {
             }
           }
           
-        } else {
-          _dwt.Addon.Camera.getSourceList()
-            .then(_cameras => {
-              for (let i = 0; i < _cameras.length; i++) {
-                this.devices.push({ deviceId: _cameras[i].deviceId, name: (i + 1).toString() + "." + _cameras[i].label, label: _cameras[i].label, type: "camera", deviceInfo:[]});
-              }
-              res(this.devices);
-            }, err => {
-              if(bfromCamera)
-                rej(err);
-              else {
-                if(err.code == -2338)
-                  res(this.devices);
-                else
-                  rej(err);
-              }
-            });
-        }
+        } 
         }).catch(function (exp) {
           alert(exp.message);
         });
@@ -380,21 +343,6 @@ export class DwtService {
             }
             else {
               waitForAnotherPromise = true;
-              _dwt.Addon.Camera.selectSource(value.deviceId)
-                .then(deviceInfo => {
-                  this._selectedDevice = name;
-                  this._useCamera = true;
-                  if (this._selectedDevice !== "") {
-                    this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
-                    res(true);
-                  }
-                  else
-                    res(false);
-                },
-                  () => {
-                    rej("Can't use the Webcam " + name + ", please make sure it's not in use!")
-                  }
-                )
             }
           }
           else {
@@ -502,13 +450,6 @@ export class DwtService {
                   }, (errCode, errString) => rej(errString)));
               }, (errCode, errStr) => rej(errStr));
             }
-            else {
-              this._DWObjectEx.Addon.Camera.capture()
-                .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
-                  this._DWObjectEx.RemoveImage(0);
-                  res(true);
-                }, (errCode, errString) => rej(errString)));
-            }
           } else {
             rej("No WebTwain instanance for camera capture!");
           }
@@ -543,19 +484,13 @@ export class DwtService {
     return new Promise((res, rej) => {
       this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.DWT.EnumDWT_ConvertMode.CM_AUTO);
       this._DWObject.Addon.PDF.SetResolution(200);
-      if (this.bWASM && files.length > 0) {
-        for (let i = 0; i < files.length; i++) {
-          this._DWObject.LoadImageFromBinary(files[i], () => { res(true); }, (errCode, errString) => { rej(errString); })
-        }
-      } else {
-        this._DWObject.IfShowFileDialog = true;
-        this._DWObject.RegisterEvent("OnPostLoad", (
-          directory: string,
-          fileName: string,
-          fileType: DynamsoftEnumsDWT.EnumDWT_ImageType) => {
-        });
-        this._DWObject.LoadImageEx("", -1,  () => { res(true); }, (errCode, errStr) => rej(errStr))
-      }
+      this._DWObject.IfShowFileDialog = true;
+      this._DWObject.RegisterEvent("OnPostLoad", (
+        directory: string,
+        fileName: string,
+        fileType: DynamsoftEnumsDWT.EnumDWT_ImageType) => {
+      });
+      this._DWObject.LoadImageEx("", -1,  () => { res(true); }, (errCode, errStr) => rej(errStr))    
     });
   }
   /**
@@ -745,7 +680,7 @@ export class DwtService {
             this.downloadOCRBasic(false)
               .then(
                 success =>
-                  res(success),
+                res(success),
                 error =>
                   rej(error)
               );
@@ -774,8 +709,8 @@ export class DwtService {
       if (bDownloadDLL) {
         this._DWObject.Addon.OCR.Download(
           strOCRPath,
-          () => this.downloadOCRBasic(false),
-          (errorCode, errorString) => rej(errorString)
+          () => this.downloadOCRBasic(false).then(() => res(true)).catch(err=>rej(err)),
+         (errorCode, errorString) => rej(errorString)
         );
       } else {
         this._DWObject.Addon.OCR.DownloadLangData(
@@ -1039,7 +974,7 @@ export class DwtService {
           let s = () => {
             if (showDialog) {
               _name = this.fileActualName;
-              _path = this.fileSavingPath + "\\" + _name;
+              _path = this.fileSavingPath + "/" + _name;
             }
             res({ name: _name, path: _path });
           }, f = (errCode, errStr) => rej(errStr);
@@ -1056,20 +991,46 @@ export class DwtService {
         });
       };
       fileName = fileName + this.getExtension(type);
-      let filePath = this.fileSavingPath + "\\" + fileName;
+      let filePath = this.fileSavingPath + "/" + fileName;
       if (showDialog) {
         this.fileSavingPath = "";
         this.fileActualName = "";
-        this._DWObject.IfShowFileDialog = true;
+        this._DWObject.IfShowFileDialog = false;
         this._DWObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, _fn) => {
-          if (directory === "" && _fn === "") {
-            rej("User cancelled the operation.")
-          } else {
-            this.fileActualName = _fn;
-            this.fileSavingPath = directory;
+          if(isSave && filesCount != -1){
+            if (directory === "" && _fn === "") {
+              rej("User cancelled the operation.")
+            } else {
+              this.fileActualName = _fn;
+              this.fileSavingPath = directory;
+              res(saveInner(this.fileSavingPath + "/" + fileName, fileName, type));
+            }
           }
         });
-        res(saveInner(this.fileSavingPath + "\\" + fileName, fileName, type));
+        if(this.runningEnvironment.bMac)
+
+          this._DWObject.ShowFileDialog(
+            true,
+            "TIF,TIFF,JPG,JPEG,PNG,PDF",
+            0,
+            "",
+            fileName,
+            true,
+            false,
+            0
+          );
+        else
+          this._DWObject.ShowFileDialog(
+            true,
+           "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg",
+            0,
+            "",
+            fileName,
+            true,
+            false,
+            0
+          );
+
       } else {
         this._DWObject.IfShowFileDialog = false;
         res(saveInner(filePath, fileName, type));

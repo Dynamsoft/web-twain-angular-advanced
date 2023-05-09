@@ -17,18 +17,15 @@
     </div>
   </div>
   <div class="controlPanel" *ngIf="dwtMounted">
-    <button class="btn btn-outline-info acquire" *ngIf="bWASM" value="acquire" title="Acquire Images"
-      (click)="acquire()"></button>
-    <button class="btn btn-outline-info acquire" *ngIf="!bWASM" value="acquire" title="Acquire Images"
+
+    <button class="btn btn-outline-info acquire" value="acquire" title="Acquire Images"
       (click)="openModal(scannerModalRef,'acquire')"></button>
-    <button class="btn btn-outline-info camera" *ngIf="bWASM" value="camera" title="Use Camera"
-      (click)="openCamera()"></button>
-    <button class="btn btn-outline-info camera" *ngIf="!bWASM" value="camera" title="Use Camera"
+    <button class="btn btn-outline-info camera" *ngIf="bWin" value="camera" title="Use Camera"
       (click)="openModal(cameraModalRef,'camera')"></button>
     <button class="btn btn-outline-info edit" value="edit" title="Edit the image" (click)="showEditor()"></button>
-    <button class="btn btn-outline-info barcode" value="barcode" title="Read Barcode"
+    <button class="btn btn-outline-info barcode" *ngIf="bWin"  value="barcode" title="Read Barcode"
       (click)="openModal(barcodeModalRef,'barcode')"></button>
-    <button class="btn btn-outline-info ocr" value="ocr" title="Perform OCR"
+    <button class="btn btn-outline-info ocr" *ngIf="bWin" value="ocr" title="Perform OCR"
       (click)="openModal(ocrModalRef,'ocr')"></button>
     <button class="btn btn-outline-info save" value="save" title="Save &amp; Upload"
       (click)="openModal(saveModalRef,'save')"></button>
@@ -37,34 +34,14 @@
 <ng-template tabindex="-1" #scannerModalRef role="dialog" aria-labelledby="acquireModalLabel" aria-hidden="true"
   let-acquireModal>
   <div class="modal-header">
-    <h5 class="modal-title"><span *ngIf="!bWASM">Scan A Document</span><span *ngIf="bWASM">Load An
-        Existing File</span></h5>
+    <h5 class="modal-title"><span >Scan A Document</span></h5>
     <button tabindex="-1" type="button" class="close" aria-label="Close" (click)="acquireModal.dismiss('Cross click')">
       <span aria-hidden="true">&times;</span>
     </button>
   </div>
   <div class="modal-body">
     <ul class="list-group">
-      <li *ngIf="bWASM" class="list-group-item">
-        <div class="input-group-prepend" style="display: flex;">
-          <label class="input-group-text" style="width: 23%;margin-right: 2%;">
-            <input type="checkbox" [(ngModel)]="formatsToImport.JPG"
-              aria-label="Checkbox for Import JPEG">&nbsp;&nbsp;JPEG</label>
-          <label class="input-group-text" style="width: 23%;margin-right: 2%;">
-            <input type="checkbox" [(ngModel)]="formatsToImport.PNG"
-              aria-label="Checkbox for Import PNG">&nbsp;&nbsp;PNG
-          </label>
-          <label class="input-group-text" style="width: 23%;margin-right: 2%;">
-            <input type="checkbox" [(ngModel)]="formatsToImport.TIF"
-              aria-label="Checkbox for Import TIF">&nbsp;&nbsp;TIF
-          </label>
-          <label class="input-group-text" style="width: 23%;">
-            <input type="checkbox" [(ngModel)]="formatsToImport.PDF"
-              aria-label="Checkbox for Import PDF">&nbsp;&nbsp;PDF
-          </label>
-        </div>
-      </li>
-      <li *ngIf="!bWASM && showDevices" class="list-group-item">
+      <li *ngIf="showDevices" class="list-group-item">
         <div class="input-group-prepend">
           <label class="input-group-text" style="width: 18%;" for="device">Device</label>
           <select class="custom-select" style="width: 80%;" id="device" [(ngModel)]="deviceName"
@@ -74,7 +51,7 @@
           </select>
         </div>
       </li>
-      <li *ngIf="!bWASM" class="list-group-item">
+      <li class="list-group-item">
         <div class="input-group-prepend" style="display: flex;">
           <label class="input-group-text" style="width: 32%;margin-right: 2%;">
             <input type="checkbox" [(ngModel)]="scanOptions.IfShowUI" aria-label="Checkbox for ShowUI">&nbsp;&nbsp;Show
@@ -89,7 +66,7 @@
           </label>
         </div>
       </li>
-      <li *ngIf="!bWASM" class="list-group-item">
+      <li class="list-group-item">
         <div class="input-group-prepend" style="display: flex;">
           <label class="input-group-text" style="width: 32%;margin-right: 2%;">
             <input type="radio" [(ngModel)]="scanOptions.PixelType" value=0
@@ -105,7 +82,7 @@
           </label>
         </div>
       </li>
-      <li *ngIf="!bWASM" class="list-group-item">
+      <li class="list-group-item">
         <div class="input-group-prepend">
           <label class="input-group-text" style="width: 48%;" for="Resolution">Resolution</label>
           <select class="custom-select w-50" id="Resolution" [(ngModel)]="scanOptions.Resolution">
@@ -123,9 +100,9 @@
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-primary" style="width:80%;" (click)="acquire()"><span
-        *ngIf="!bWASM">Scan</span><span *ngIf="bWASM">Load</span></button>
+      >Scan</span></button>
   </div>
-  <div class="modal-footer" *ngIf="!bWASM">
+  <div class="modal-footer">
     <div>If you don't have a scanner, you can load an existing file</div>
     <button type="button" class="btn btn-secondary" style="width:80%;" (click)="load()">Load</button>
   </div>
@@ -299,10 +276,7 @@
       <span aria-hidden="true">&times;</span>
     </button>
   </div>
-  <div *ngIf="bWASM" class="modal-body alert alert-info" role="alert">
-    OCR support on your current platform is under development, stay tuned!!
-  </div>
-  <div *ngIf="!bLoadingOCREngine && !bWASM && !emptyBuffer" class="modal-body">
+  <div *ngIf="!bLoadingOCREngine && !emptyBuffer" class="modal-body">
     <div class="input-group-prepend">
       <label class="input-group-text" style="width: 20%;" for="OCREngine">Module</label>
       <select class="custom-select" style="width: 80%;" id="OCREngine" [(ngModel)]="OCREngine"
@@ -313,7 +287,7 @@
       </select>
     </div>
   </div>
-  <div *ngIf="ocrReady && !bWASM && !useOCRPro" class="modal-body">
+  <div *ngIf="ocrReady && !useOCRPro" class="modal-body">
     <select class="custom-select w-50" [(ngModel)]="ocrOptions.Language">
       <option *ngFor="let language of OCRLanguages; let i = index" value={{language.val}}>{{language.desc}}</option>
     </select>
@@ -322,7 +296,7 @@
         {{outputFormat.desc}}</option>
     </select>
   </div>
-  <div *ngIf="ocrReady && !bWASM && useOCRPro" class="modal-body">
+  <div *ngIf="ocrReady  && useOCRPro" class="modal-body">
     <div class="input-group-prepend">
       <label class="input-group-text w-50" for="RecognitionModule">Recognition Module</label>
       <select class="custom-select w-50" id="RecognitionModule" [(ngModel)]="ocrProOptions.RecognitionModule">
@@ -388,7 +362,7 @@
       </select>
     </div>
   </div>
-  <div *ngIf="bLoadingOCREngine && !bWASM" class="modal-body d-flex justify-content-center">
+  <div *ngIf="bLoadingOCREngine " class="modal-body d-flex justify-content-center">
     <div class="spinner-border" role="status" style="margin:auto;">
       <span class="sr-only">Loading...</span>
     </div>
@@ -400,7 +374,7 @@
     </li>
   </ul>
   <div class="alert alert-danger" style="margin:2%" role="alert" *ngIf="instantError">{{instantError}}</div>
-  <div *ngIf="!bWASM" class="modal-footer">
+  <div class="modal-footer">
     <button type="button" style="width:80%;" class="btn btn-primary" [disabled]="emptyBuffer || !ocrReady"
       (click)="doOCR()">{{ocrButtonText}}</button>
   </div>
@@ -446,7 +420,7 @@
             [(ngModel)]="saveOptions.fileName" />
         </div>
       </li>
-      <li *ngIf="!bWASM && saveOptions.outPutType === 'File'" class="list-group-item">
+      <li *ngIf="saveOptions.outPutType === 'File'" class="list-group-item">
         <label class="input-group-text" style="width: 100%;">
           <input type="checkbox" [(ngModel)]="saveOptions.upload" aria-label="Checkbox for upload"
             (ngModelChange)="outPutTypeChanged('File')">&nbsp;&nbsp;Upload To

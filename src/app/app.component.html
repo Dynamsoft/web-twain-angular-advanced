@@ -65,12 +65,6 @@
     <h5 class="mt-2">Your current environment is</h5>
     <div id="current-env">{{currentEnv}}</div>
 
-    <label *ngIf="!bMobile" class="input-group-text w-100 mb-1">
-      <input type="checkbox" [(ngModel)]="bNoInstall" aria-label="Checkbox for whether to use Service">&nbsp;&nbsp;Do
-      not install anything!</label>
-    <label *ngIf="bShowCameraOption && !bNoInstall" class="input-group-text w-100 mb-1">
-      <input type="checkbox" [(ngModel)]="bUseCameraViaDirectShow"
-        aria-label="Checkbox for whether to use Camera Addon">&nbsp;&nbsp;Use DirectShow!</label>
     <button class="btn btn-outline-success" (click)="toggleStartDemo()">Start Demo</button>
   </div>
   <app-dwt *ngIf="!bStartUp" [events]="eventsSubject.asObservable()"></app-dwt>

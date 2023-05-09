@@ -37,7 +37,7 @@ export class DwtComponent implements OnInit, OnDestroy {
   /**
    * Global variables and status flags.
    */
-  public bWASM = false;
+  public bWin = true;
   public dwtMounted = false;
   public bMobile: boolean;
   public bUseCameraViaDirectShow: boolean;
@@ -313,7 +313,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       let currentIndex = this.DWObject.ImageIDToIndex(this.barcodeRects.imageIds[i]);
       if (this.DWObject.CurrentImageIndexInBuffer === currentIndex) {
         let rectsOnOnePage = this.barcodeRects.rects[i];
-        let mainViewer = <HTMLDivElement>document.querySelector("#" + this.containerId + " .dvs-container");
+        let mainViewer = <HTMLDivElement>document.querySelector("#" + this.containerId + " .dvs-viewer-main");
         let zoom = 0,
           viewerWidth = <number>mainViewer.offsetWidth,
           viewerHeight = <number>mainViewer.offsetHeight,
@@ -447,7 +447,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       .then(
         obj => {
           this.DWObject = obj;
-          this.bWASM = this.dwtService.bWASM;
+          this.bWin = this.dwtService.runningEnvironment.bWin;
           this.bUseCameraViaDirectShow = this.dwtService.bUseCameraViaDirectShow;
           this.dwtMounted = true;
           this.dwtService.mountVideoContainer()
@@ -471,8 +471,6 @@ export class DwtComponent implements OnInit, OnDestroy {
             this.deviceName = "Choose...";
             return true;
           case "camera":
-            if (this.bWASM)
-              return true;
             if (this.videoPlaying) {
               if (this.bUseCameraViaDirectShow) {
                 this.showMessage("Please stop video first!");
@@ -543,9 +541,9 @@ export class DwtComponent implements OnInit, OnDestroy {
             this.currentItem = "";
             this.currentOptionItems = [];
             this.VideoContainer.Viewer.bind(<HTMLDivElement>document.getElementById(this.videoContainerId));
-			this.VideoContainer.Viewer.width = "100%";
-			this.VideoContainer.Viewer.height = "100%";
-			this.VideoContainer.Viewer.show();
+            this.VideoContainer.Viewer.width = "100%";
+            this.VideoContainer.Viewer.height = "100%";
+            this.VideoContainer.Viewer.show();
           }
           else
             setTimeout(() => makeSureDIVExists(), 10);
@@ -573,6 +571,9 @@ export class DwtComponent implements OnInit, OnDestroy {
         if (this.bMobile) return;
         this.ocrResultString = "";
         this.ocrButtonText = "Recognize";
+        if (this.OCREngine === "Pro"){
+          this.showMessage("The Professional Engine is huge, please hold on while it downloads...");
+        }
         break;
       case "save":
         if (!this.emptyBuffer)
@@ -592,19 +593,6 @@ export class DwtComponent implements OnInit, OnDestroy {
     else
       this.modalRef.dismiss();
   }
-  openCamera() {
-    this.DWObject.Addon.Camera.getSourceList().then((sources)=>{
-      if(sources && sources.length > 0)  
-          return this.DWObject.Addon.Camera.selectSource(sources[0].deviceId);
-      else {
-            throw {
-                message: 'no sources'
-            }
-        }
-    }).then(()=>{
-        return this.DWObject.Addon.Camera.showVideo();
-    }).catch(function(exp){console.log(exp.message);})
-  }
   handleDeviceChange(deviceType: string) {
     if (this.deviceName === "" || this.deviceName === "Choose...")
       return;
@@ -622,12 +610,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   acquire() {
-    if (this.dwtService.bWASM) {
-      (<HTMLInputElement>document.getElementById(this.containerId + "-fileInput")).value = "";
-      document.getElementById(this.containerId + "-fileInput").click();
-    } else {
-      this.scan();
-    }
+    this.scan();
   }
   acquireFromCamera() {
     this.dwtService.acquire()
@@ -680,13 +663,11 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
     this.bLoadingOCREngine = true;
     this.ocrReady = false;
-    this.dwtService.loadOCRModule(engine)
-      .then(() => {
+    this.dwtService.loadOCRModule(engine).then(() => {
         this.clearMessage();
         this.bLoadingOCREngine = false;
         this.ocrReady = true;
-      }, err =>
-        this.showMessage(err)
+      }, err =>this.showMessage(err)
       );
   }
   ocrProOutPutFormatChange(format: string) {
@@ -915,8 +896,6 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.DWObject.Addon.Webcam.StopVideo();
       this.DWObject.Addon.Webcam.CloseSource();
     }
-    else
-      this.DWObject.Addon.Camera.stop();
     
 	if (this.VideoContainer)
       _dwt = this.VideoContainer;
@@ -931,14 +910,7 @@ export class DwtComponent implements OnInit, OnDestroy {
         this.videoPlaying = true;
       });
       return true;
-    } else {
-      _dwt.Addon.Camera.play()
-        .then(() => {
-          this.showVideoText = "Stop Video";
-          this.videoPlaying = true;
-          return true;
-        }, () => { return false; })
-    }
+    } 
   }
   toggleVideo() {
     let _dwt = this.DWObject;
@@ -949,8 +921,6 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.showVideoText = "Show Video";
       if (this.bUseCameraViaDirectShow)
         return _dwt.Addon.Webcam.StopVideo();
-      else
-        return _dwt.Addon.Camera.stop();
     } else
       return this.playVideo();
   }

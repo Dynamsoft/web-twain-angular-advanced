@@ -15,19 +15,16 @@ export class AppComponent implements OnInit {
     this.eventsSubject.next(event);
   }
   title = 'DWT + Angular Sample';
-  version = ' v17.1';
+  version = ' v18.2';
   currentEnv = "";
   bStartUp = true;
-  bNoInstall = false;
   bMobile = false;
-  bShowCameraOption = false;
-  bUseCameraViaDirectShow = false;
+  bUseCameraViaDirectShow = true;
   constructor(protected dwtService: DwtService) { }
 
   toggleStartDemo() {
     this.bStartUp = !this.bStartUp;
-    this.dwtService.bUseService = !this.bNoInstall;
-    this.dwtService.bUseCameraViaDirectShow = this.bUseCameraViaDirectShow && !this.bNoInstall;
+    this.dwtService.bUseCameraViaDirectShow = this.bUseCameraViaDirectShow;
   }
   ngOnInit() {
 	let env = this.dwtService.runningEnvironment;
@@ -37,8 +34,6 @@ export class AppComponent implements OnInit {
 		this.currentEnv += env.bFirefox ? "Firefox " + env.strFirefoxVersion : "";
 		this.currentEnv += env.bSafari ? "Safari" : "";
 	} else {
-		if (env.bWin)
-		  this.bShowCameraOption = true;
 		this.currentEnv += env.bWin ? "Windows, " : "";
 		this.currentEnv += env.bLinux ? "Linux, " : "";
 		this.currentEnv += env.bChrome ? "Chrome " + env.strChromeVersion : "";

@@ -11,10 +11,10 @@ This project was bootstrapped with [Angular CLI](https://github.com/angular/angu
   * Barcode reading
 
 ## Usage
-
+Environment: Node.js v16.20.0
 1. Apply for a [30-day free trial license](https://www.dynamsoft.com/customer/license/trialLicense?product=dwt) of Dynamic Web TWAIN.
 
-2. Update the license key in two files `environment.ts` and `environment.prod.ts` :
+2. Update the license key in two files `src\environments\environment.ts` and `src\environments\environment.prod.ts` :
 
    ```
    export const environment = {
@@ -28,7 +28,7 @@ This project was bootstrapped with [Angular CLI](https://github.com/angular/angu
 3. Install the dependencies:
 
    ```
-   npm install
+   npm install --force
    ```
 
 4. Run the Angular application as follows:
