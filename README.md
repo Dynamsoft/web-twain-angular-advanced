@@ -11,7 +11,7 @@ This project was bootstrapped with [Angular CLI](https://github.com/angular/angu
   * Barcode reading
 
 ## Usage
-Environment: Node.js v16.20.0
+Environment: Node.js v18.16.0
 1. Apply for a [30-day free trial license](https://www.dynamsoft.com/customer/license/trialLicense?product=dwt) of Dynamic Web TWAIN.
 
 2. Update the license key in two files `src\environments\environment.ts` and `src\environments\environment.prod.ts` :
