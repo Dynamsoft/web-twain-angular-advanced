@@ -18,13 +18,21 @@ export class AppComponent implements OnInit {
   version = ' v18.2';
   currentEnv = "";
   bStartUp = true;
+  bStartDemo = false;
   bMobile = false;
   bUseCameraViaDirectShow = true;
-  constructor(protected dwtService: DwtService) { }
+  constructor(protected dwtService: DwtService) {
+    let _this = this; 
+    dwtService.showStartDemo(function(bShowStartDemo){
+      _this.bStartDemo = bShowStartDemo;
+      //_this.onResize(undefined);
+    });
+  }
 
   toggleStartDemo() {
     this.bStartUp = !this.bStartUp;
     this.dwtService.bUseCameraViaDirectShow = this.bUseCameraViaDirectShow;
+
   }
   ngOnInit() {
 	let env = this.dwtService.runningEnvironment;
@@ -45,4 +53,5 @@ export class AppComponent implements OnInit {
 	let curYear = <HTMLDivElement>document.getElementById("copyRightCurYear");
 	curYear.innerHTML = (new Date()).getFullYear().toString();
   }
+
 }

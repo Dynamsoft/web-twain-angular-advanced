@@ -146,6 +146,8 @@ export class DwtService {
    */
   private fileSavingPath = "C:";
   private fileActualName = "";
+  private _doFunction;
+
 
   constructor() {
     /**
@@ -159,9 +161,19 @@ export class DwtService {
      * ConnectToTheService is overwritten here for smoother install process.
      */
     Dynamsoft.DWT.ConnectToTheService = () => {
-      this.mountDWT();
+      //this.mountDWT();
+      this._doFunction(true);
+      window.location.reload();
     };
+    Dynamsoft.DWT.OnWebTwainReady = () => { 
+      this._doFunction(true);
+     }
   }
+
+  showStartDemo(doFunction){
+    this._doFunction = doFunction;
+  }
+
   mountDWT(UseService?: boolean): Promise<any> {
     this._DWObject = null;
     return new Promise((res, rej) => {
@@ -482,8 +494,12 @@ export class DwtService {
    */
   load(files?: FileList): Promise<any> {
     return new Promise((res, rej) => {
-      this._DWObject.Addon.PDF.SetConvertMode(Dynamsoft.DWT.EnumDWT_ConvertMode.CM_AUTO);
-      this._DWObject.Addon.PDF.SetResolution(200);
+      this._DWObject.Addon.PDF.SetReaderOptions({
+        convertMode: Dynamsoft.DWT.EnumDWT_ConvertMode.CM_AUTO,
+        renderOptions: {
+            resolution: 200
+        }
+      });
       this._DWObject.IfShowFileDialog = true;
       this._DWObject.RegisterEvent("OnPostLoad", (
         directory: string,
