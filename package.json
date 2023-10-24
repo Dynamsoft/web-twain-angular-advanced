@@ -22,7 +22,7 @@
     "@angular/router": "~16.0.0",
     "@ng-bootstrap/ng-bootstrap": "~15.0.0",
     "bootstrap": "^5.3.0",
-    "dwt": "18.4.0",
+    "dwt": "18.4.1",
     "rxjs": "~6.6.0",
     "tslib": "^2.1.0",
     "zone.js": "~0.13.0"
