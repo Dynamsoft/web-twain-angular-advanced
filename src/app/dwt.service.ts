@@ -150,6 +150,14 @@ export class DwtService {
 
 
   constructor() {
+    Dynamsoft.OnLicenseError = function (message, errorCode) {
+      if(errorCode == -2808)
+        message = '<div style="padding:0">Sorry. Your product key has expired. You can purchase a full license at the <a target="_blank" href="https://www.dynamsoft.com/store/dynamic-web-twain/#DynamicWebTWAIN">online store</a>.</div><div style="padding:0">Or, you can try requesting a new product key at <a target="_blank" href="https://www.dynamsoft.com/customer/license/trialLicense?product=dwt&utm_source=in-product">this page</a>.</div><div style="padding:0">If you need any help, please <a target="_blank" href="https://www.dynamsoft.com/company/contact/">contact us</a>.</div>';
+      (Dynamsoft.DWT as any).ShowMessage(message, {
+        width: 680,
+        headerStyle: 2
+      });
+   };
     /**
      * ResourcesPath & ProductKey must be set in order to use the library!
      */
