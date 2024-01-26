@@ -25,8 +25,6 @@
     <button class="btn btn-outline-info edit" value="edit" title="Edit the image" (click)="showEditor()"></button>
     <button class="btn btn-outline-info barcode" *ngIf="bWin"  value="barcode" title="Read Barcode"
       (click)="openModal(barcodeModalRef,'barcode')"></button>
-    <button class="btn btn-outline-info ocr" *ngIf="bWin" value="ocr" title="Perform OCR"
-      (click)="openModal(ocrModalRef,'ocr')"></button>
     <button class="btn btn-outline-info save" value="save" title="Save &amp; Upload"
       (click)="openModal(saveModalRef,'save')"></button>
   </div>
@@ -267,116 +265,6 @@
     <button type="button" class="btn btn-primary" style="width:80%;"
       [disabled]="emptyBuffer || barcodeButtonText==='Reading...'"
       (click)="readBarcode()">{{barcodeButtonText}}</button>
-  </div>
-</ng-template>
-<ng-template tabindex="-1" #ocrModalRef role="dialog" aria-labelledby="ocrModalLabel" aria-hidden="true" let-ocrModal>
-  <div class="modal-header">
-    <h5 class="modal-title">OCR</h5>
-    <button tabindex="-1" type="button" class="close" aria-label="Close" (click)="ocrModal.dismiss('Cross click')">
-      <span aria-hidden="true">&times;</span>
-    </button>
-  </div>
-  <div *ngIf="!bLoadingOCREngine && !emptyBuffer" class="modal-body">
-    <div class="input-group-prepend">
-      <label class="input-group-text" style="width: 20%;" for="OCREngine">Module</label>
-      <select class="custom-select" style="width: 80%;" id="OCREngine" [(ngModel)]="OCREngine"
-        (ngModelChange)="ocrEngineChange($event)">
-        <option selected>Choose...</option>
-        <option>Basic</option>
-        <option>Pro</option>
-      </select>
-    </div>
-  </div>
-  <div *ngIf="ocrReady && !useOCRPro" class="modal-body">
-    <select class="custom-select w-50" [(ngModel)]="ocrOptions.Language">
-      <option *ngFor="let language of OCRLanguages; let i = index" value={{language.val}}>{{language.desc}}</option>
-    </select>
-    <select class="custom-select w-50" [(ngModel)]="ocrOptions.OutputFormat">
-      <option *ngFor="let outputFormat of OCROutputFormats; let i = index" value={{outputFormat.val}}>
-        {{outputFormat.desc}}</option>
-    </select>
-  </div>
-  <div *ngIf="ocrReady  && useOCRPro" class="modal-body">
-    <div class="input-group-prepend">
-      <label class="input-group-text w-50" for="RecognitionModule">Recognition Module</label>
-      <select class="custom-select w-50" id="RecognitionModule" [(ngModel)]="ocrProOptions.RecognitionModule">
-        <option *ngFor="let recognitionModule of OCRProRecognitionModule; let i = index"
-          value={{recognitionModule.val}}>
-          {{recognitionModule.desc}}</option>
-      </select>
-    </div>
-    <div class="input-group-prepend mt-2">
-      <label class="input-group-text w-50" for="Language">Target Language</label>
-      <select class="custom-select w-50" id="Language" [(ngModel)]="ocrProOptions.Language">
-        <option *ngFor="let language of OCRProLanguages; let i = index" value={{language.val}}>{{language.desc}}
-        </option>
-      </select>
-    </div>
-    <div class="input-group-prepend mt-2">
-      <label class="input-group-text w-50" for="OutputFormat">Output Format</label>
-      <select class="custom-select w-50" id="OutputFormat" [(ngModel)]="ocrProOptions.OutputFormat"
-        (ngModelChange)="ocrProOutPutFormatChange($event)">
-        <option *ngFor="let outputFormat of OCRProOutputFormat; let i = index" value={{outputFormat.val}}>
-          {{outputFormat.desc}}</option>
-      </select>
-    </div>
-    <div *ngIf="ocrProOptions.OutputFormat==='IOTPDF'||ocrProOptions.OutputFormat==='IOTPDF_MRC'"
-      class="input-group-prepend mt-2">
-      <label class="input-group-text w-50" for="PDFVersion">PDF Version</label>
-      <select class="custom-select w-50" id="PDFVersion" [(ngModel)]="ocrProOptions.PDFVersion">
-        <option *ngFor="let pdfV of OCRProPDFVersion; let i = index" value={{pdfV.val}}>
-          {{pdfV.desc}}</option>
-      </select>
-    </div>
-    <div *ngIf="ocrProOptions.OutputFormat==='IOTPDF'||ocrProOptions.OutputFormat==='IOTPDF_MRC'"
-      class="input-group-prepend mt-2">
-      <label class="input-group-text w-50" for="PDFAVersion">PDFA Version</label>
-      <select class="custom-select w-50" id="PDFAVersion" [(ngModel)]="ocrProOptions.PDFAVersion">
-        <option *ngFor="let pdfaV of OCRProPDFAVersion; let i = index" value={{pdfaV.val}}>
-          {{pdfaV.desc}}</option>
-      </select>
-    </div>
-    <div *ngIf="ocrProOptions.OutputFormat==='IOTPDF'||ocrProOptions.OutputFormat==='IOTPDF_MRC'"
-      class="input-group-prepend mt-2">
-      <label class="input-group-text" style="width: 100%;">
-        <input type="checkbox" [(ngModel)]="ocrProOptions.bFindText"
-          aria-label="Checkbox for whether to find text">&nbsp;&nbsp;Search Text and Redact</label>
-    </div>
-    <div *ngIf="ocrProOptions.bFindText" class="input-group-prepend mt-2">
-      <label class="input-group-text" style="width: 50%;" for="textToFind">Text to Find</label>
-      <input type="text" class="custom-select" style="width: 50%;" id="textToFind"
-        [(ngModel)]="ocrProOptions.textToFind" />
-    </div>
-    <div *ngIf="ocrProOptions.bFindText" class="input-group-prepend mt-2">
-      <label class="input-group-text w-50" for="FindTextFlags">Find Text Mode</label>
-      <select class="custom-select w-50" id="FindTextFlags" [(ngModel)]="ocrProOptions.FindTextFlags">
-        <option *ngFor="let flag of OCRProFindTextFlags; let i = index" value={{flag.val}}>
-          {{flag.desc}}</option>
-      </select>
-    </div>
-    <div *ngIf="ocrProOptions.bFindText" class="input-group-prepend mt-2">
-      <label class="input-group-text w-50" for="FindTextAction">Find Text Action</label>
-      <select class="custom-select w-50" id="FindTextAction" [(ngModel)]="ocrProOptions.FindTextAction">
-        <option *ngFor="let action of OCRProFindTextAction; let i = index" value={{action.val}}>
-          {{action.desc}}</option>
-      </select>
-    </div>
-  </div>
-  <div *ngIf="bLoadingOCREngine " class="modal-body d-flex justify-content-center">
-    <div class="spinner-border" role="status" style="margin:auto;">
-      <span class="sr-only">Loading...</span>
-    </div>
-  </div>
-  <div class="ocrResultString" *ngIf="ocrResultString!==''">{{ocrResultString}}</div>
-  <ul class="list-group" *ngIf="ocrResultURLs.length>0">
-    <li class="list-group-item" *ngFor="let url of ocrResultURLs; let i=index">
-      <button class="btn btn-success w-100" (click)="copyURLToShow(url)">{{ocrResultFiles[i].name}}</button>
-    </li>
-  </ul>
-  <div class="alert alert-danger" style="margin:2%" role="alert" *ngIf="instantError">{{instantError}}</div>
-  <div class="modal-footer">
-    <button type="button" style="width:80%;" class="btn btn-primary" [disabled]="emptyBuffer || !ocrReady"
-      (click)="doOCR()">{{ocrButtonText}}</button>
   </div>
 </ng-template>
 <ng-template tabindex="-1" #saveModalRef role="dialog" aria-labelledby="saveModalLabel" aria-hidden="true"
