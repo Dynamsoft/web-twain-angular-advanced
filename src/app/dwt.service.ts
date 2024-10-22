@@ -19,8 +19,8 @@ export class DwtService {
   /**
    * WebTwain objects
    */
-  protected _DWObject: WebTwain = null;
-  protected _DWObjectEx: WebTwain = null;
+  protected _DWTObject: WebTwain = null;
+  protected _DWTObjectEx: WebTwain = null;
   /**
    * Global environment that is detected by the dwt library.
    */
@@ -90,7 +90,7 @@ export class DwtService {
   }
 
   mountDWT(UseService?: boolean): Promise<any> {
-    this._DWObject = null;
+    this._DWTObject = null;
     return new Promise((res, rej) => {
       let dwtInitialConfig: DWTInitialConfig = {
         WebTwainId: "dwtObject"
@@ -116,14 +116,14 @@ export class DwtService {
           dwtInitialConfig.UseLocalService = Dynamsoft.DWT.UseLocalService;
           Dynamsoft.DWT.CreateDWTObjectEx(
             dwtInitialConfig,
-            (_DWObject) => {
-              this._DWObject = _DWObject;
-              /*this._DWObject.IfShowProgressBar = false;
-              this._DWObject.IfShowCancelDialogWhenImageTransfer = false;*/
+            (_DWTObject) => {
+              this._DWTObject = _DWTObject;
+              /*this._DWTObject.IfShowProgressBar = false;
+              this._DWTObject.IfShowCancelDialogWhenImageTransfer = false;*/
               /**
                * The event OnBufferChanged is used here for monitoring the image buffer.
                */
-              this._DWObject.RegisterEvent("OnBufferChanged", (changedIndexArray, operationType, changedIndex, imagesCount) => {
+              this._DWTObject.RegisterEvent("OnBufferChanged", (changedIndexArray, operationType, changedIndex, imagesCount) => {
                 switch (operationType) {
                   /** reserved space
                    * type: 1-Append(after index), 2-Insert(before index), 3-Remove, 4-Edit(Replace), 5-Index Change
@@ -136,12 +136,12 @@ export class DwtService {
                   default: break;
                 }
                 this.bufferSubject.next("changed");
-                if (this._DWObject.HowManyImagesInBuffer === 0)
+                if (this._DWTObject.HowManyImagesInBuffer === 0)
                   this.bufferSubject.next("empty");
                 else
                   this.bufferSubject.next("filled");
               });
-              res(_DWObject);
+              res(_DWTObject);
             },
             (errorString) => {
               rej(errorString);
@@ -160,20 +160,20 @@ export class DwtService {
     });
   }
   /**
-   * Create an extra WebTwain instance _DWObjectEx
+   * Create an extra WebTwain instance _DWTObjectEx
    * This is used solely for displaying & capturing from a video stream.
    */
   mountVideoContainer(): Promise<any> {
-    this._DWObjectEx = null;
+    this._DWTObjectEx = null;
     return new Promise((res, rej) => {
-      if (this._DWObject) {
+      if (this._DWTObject) {
         let dwtInitialConfig: DWTInitialConfig = {
           WebTwainId: "videoContainer" 
         };
         Dynamsoft.DWT.CreateDWTObjectEx(
           dwtInitialConfig,
           (_container) => {
-            this._DWObjectEx = _container;
+            this._DWTObjectEx = _container;
             res(_container);
           },
           (errorString) => {
@@ -201,11 +201,11 @@ export class DwtService {
    */
   getDevices(bfromCamera): Promise<Device[]> {
     return new Promise((res, rej) => {
-      let _dwt = this._DWObject;
-      if (this._DWObjectEx)
-        _dwt = this._DWObjectEx;
+      let _dwt = this._DWTObject;
+      if (this._DWTObjectEx)
+        _dwt = this._DWTObjectEx;
       this.devices = [];
-      this._DWObject.GetDevicesAsync().then((devicesList)=>{
+      this._DWTObject.GetDevicesAsync().then((devicesList)=>{
         for (let i = 0; i < devicesList.length; i++) {
           this.devices.push({ deviceId: Math.floor(Math.random() * 100000).toString(), name: (i + 1).toString() + "." + devicesList[i].displayName, label: devicesList[i].displayName, type: "scanner", deviceInfo: devicesList[i] });
         }           
@@ -238,7 +238,7 @@ export class DwtService {
    * Retrieve detailed information of the devices.
    */
   getDeviceDetails() {
-    return this._DWObject.GetSourceNames(true);
+    return this._DWTObject.GetSourceNames(true);
   }
   /**
    * Select a scanner or camera by name.
@@ -254,9 +254,9 @@ export class DwtService {
       this.devices.forEach((value, index) => {
         if (value && value.name === name) {
           if (index > this._scannersCount - 1) {
-            let _dwt = this._DWObject;
-            if (this._DWObjectEx)
-              _dwt = this._DWObjectEx;
+            let _dwt = this._DWTObject;
+            if (this._DWTObjectEx)
+              _dwt = this._DWTObjectEx;
             if (this.bUseCameraViaDirectShow) {
               _dwt.Addon.Webcam.StopVideo();
               if (_dwt.Addon.Webcam.SelectSource(value.label)) {
@@ -274,7 +274,7 @@ export class DwtService {
           }
           else {
             waitForAnotherPromise = true;
-            this._DWObject.SelectDeviceAsync(value.deviceInfo).then(()=>{
+            this._DWTObject.SelectDeviceAsync(value.deviceInfo).then(()=>{
               this._selectedDevice = name;
               this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
               res(true);
@@ -367,12 +367,12 @@ export class DwtService {
     return new Promise((res, rej) => {
       if (this._selectedDevice !== "") {
         if (this._useCamera) {
-          if (this._DWObjectEx) {
+          if (this._DWTObjectEx) {
             if (this.bUseCameraViaDirectShow) {
-              this._DWObjectEx.Addon.Webcam.CaptureImage(() => {
-                this.getBlob([0], Dynamsoft.DWT.EnumDWT_ImageType.IT_PNG, this._DWObjectEx)
-                  .then(blob => this._DWObject.LoadImageFromBinary(blob, () => {
-                    this._DWObjectEx.RemoveImage(0);
+              this._DWTObjectEx.Addon.Webcam.CaptureImage(() => {
+                this.getBlob([0], Dynamsoft.DWT.EnumDWT_ImageType.IT_PNG, this._DWTObjectEx)
+                  .then(blob => this._DWTObject.LoadImageFromBinary(blob, () => {
+                    this._DWTObjectEx.RemoveImage(0);
                     res(true);
                   }, (errCode, errString) => rej(errString)));
               }, (errCode, errStr) => rej(errStr));
@@ -381,18 +381,18 @@ export class DwtService {
             rej("No WebTwain instanance for camera capture!");
           }
         } else {
-          this._DWObject.SetOpenSourceTimeout(3000);
+          this._DWTObject.SetOpenSourceTimeout(3000);
           if (bAdvanced) {
-            if (this._DWObject.OpenSource()){
-              this._DWObject.startScan(<ScanSetup>config);
+            if (this._DWTObject.OpenSource()){
+              this._DWTObject.startScan(<ScanSetup>config);
             } else {
-              rej(this._DWObject.ErrorString);
+              rej(this._DWTObject.ErrorString);
             }
           } else {
-            this._DWObject.AcquireImageAsync(<DeviceConfiguration>config).then(()=>{
-              return  this._DWObject.CloseSourceAsync();
+            this._DWTObject.AcquireImageAsync(<DeviceConfiguration>config).then(()=>{
+              return  this._DWTObject.CloseSourceAsync();
             }).then(()=>{
-              this._DWObject.CloseWorkingProcess();
+              this._DWTObject.CloseWorkingProcess();
             }).catch((exp) =>{
               rej(exp.message);
             });
@@ -409,19 +409,19 @@ export class DwtService {
    */
   load(files?: FileList): Promise<any> {
     return new Promise((res, rej) => {
-      this._DWObject.Addon.PDF.SetReaderOptions({
+      this._DWTObject.Addon.PDF.SetReaderOptions({
         convertMode: Dynamsoft.DWT.EnumDWT_ConvertMode.CM_AUTO,
         renderOptions: {
             resolution: 200
         }
       });
-      this._DWObject.IfShowFileDialog = true;
-      this._DWObject.RegisterEvent("OnPostLoad", (
+      this._DWTObject.IfShowFileDialog = true;
+      this._DWTObject.RegisterEvent("OnPostLoad", (
         directory: string,
         fileName: string,
         fileType: DynamsoftEnumsDWT.EnumDWT_ImageType) => {
       });
-      this._DWObject.LoadImageEx("", -1,  () => { res(true); }, (errCode, errStr) => rej(errStr))    
+      this._DWTObject.LoadImageEx("", -1,  () => { res(true); }, (errCode, errStr) => rej(errStr))    
     });
   }
   /**
@@ -443,16 +443,16 @@ export class DwtService {
    * @param config Configuration for the read.
    */
   readBarcode(config?: any) {
-    let _index = this._DWObject.CurrentImageIndexInBuffer;
+    let _index = this._DWTObject.CurrentImageIndexInBuffer;
     if (config && config.index !== undefined) {
       _index = Math.floor(config.index);
-      if (_index < 0 || _index > this._DWObject.HowManyImagesInBuffer - 1)
-        _index = this._DWObject.CurrentImageIndexInBuffer;
+      if (_index < 0 || _index > this._DWTObject.HowManyImagesInBuffer - 1)
+        _index = this._DWTObject.CurrentImageIndexInBuffer;
     }
     Dynamsoft.Lib.showMask();
-    this._DWObject.Addon.BarcodeReader.getRuntimeSettings()
+    this._DWTObject.Addon.BarcodeReader.getRuntimeSettings()
       .then(settings => {
-        if (this._DWObject.GetImageBitDepth(_index) === 1) {
+        if (this._DWTObject.GetImageBitDepth(_index) === 1) {
           settings.scaleDownThreshold = 214748347;
         } else {
           settings.scaleDownThreshold = 2300;
@@ -537,11 +537,11 @@ export class DwtService {
       this.barcodeSubject.next({ done: true });
       Dynamsoft.Lib.hideMask();
     };
-    this._DWObject.Addon.BarcodeReader.updateRuntimeSettings(settings)
+    this._DWTObject.Addon.BarcodeReader.updateRuntimeSettings(settings)
       .then(_ => {
         let decoderFunc = () => {
           try {
-            this._DWObject.Addon.BarcodeReader.decode(index)
+            this._DWTObject.Addon.BarcodeReader.decode(index)
               .then(textResults => {
                 this.barcodeResults.push(textResults);
                 bHasCallback ? callback() : outputResults();
@@ -597,7 +597,7 @@ export class DwtService {
    */
   getBlob(indices: number[], type: DynamsoftEnumsDWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
-      let _dwt = this._DWObject;
+      let _dwt = this._DWTObject;
       if (dwt)
         _dwt = dwt;
       switch (type) {
@@ -619,7 +619,7 @@ export class DwtService {
    */
   getBase64(indices: number[], type: DynamsoftEnumsDWT.EnumDWT_ImageType, dwt?: WebTwain): Promise<any> {
     return new Promise((res, rej) => {
-      let _dwt = this._DWObject;
+      let _dwt = this._DWTObject;
       if (dwt)
         _dwt = dwt;
       if (type === Dynamsoft.DWT.EnumDWT_ImageType.IT_ALL)
@@ -707,13 +707,13 @@ export class DwtService {
             res({ name: _name, path: _path });
           }, f = (errCode, errStr) => rej(errStr);
           switch (_type) {
-            case 0: this._DWObject.SaveAsBMP(_path, indices[0], s, f); break;
-            case 1: this._DWObject.SaveAsJPEG(_path, indices[0], s, f); break;
-            case 2: this._DWObject.SaveAsTIFF(_path, indices[0], s, f); break;
-            case 3: this._DWObject.SaveAsPNG(_path, indices[0], s, f); break;
-            case 4: this._DWObject.SaveAsPDF(_path, indices[0], s, f); break;
-            case 7: this._DWObject.SaveSelectedImagesAsMultiPagePDF(_path, s, f); break;
-            case 8: this._DWObject.SaveSelectedImagesAsMultiPageTIFF(_path, s, f); break;
+            case 0: this._DWTObject.SaveAsBMP(_path, indices[0], s, f); break;
+            case 1: this._DWTObject.SaveAsJPEG(_path, indices[0], s, f); break;
+            case 2: this._DWTObject.SaveAsTIFF(_path, indices[0], s, f); break;
+            case 3: this._DWTObject.SaveAsPNG(_path, indices[0], s, f); break;
+            case 4: this._DWTObject.SaveAsPDF(_path, indices[0], s, f); break;
+            case 7: this._DWTObject.SaveSelectedImagesAsMultiPagePDF(_path, s, f); break;
+            case 8: this._DWTObject.SaveSelectedImagesAsMultiPageTIFF(_path, s, f); break;
             default: break;
           }
         });
@@ -723,8 +723,8 @@ export class DwtService {
       if (showDialog) {
         this.fileSavingPath = "";
         this.fileActualName = "";
-        this._DWObject.IfShowFileDialog = false;
-        this._DWObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, _fn) => {
+        this._DWTObject.IfShowFileDialog = false;
+        this._DWTObject.RegisterEvent("OnGetFilePath", (isSave, filesCount, index, directory, _fn) => {
           if(isSave && filesCount != -1){
             if (directory === "" && _fn === "") {
               rej("User cancelled the operation.")
@@ -737,7 +737,7 @@ export class DwtService {
         });
         if(this.runningEnvironment.bMac)
 
-          this._DWObject.ShowFileDialog(
+          this._DWTObject.ShowFileDialog(
             true,
             "TIF,TIFF,JPG,JPEG,PNG,PDF",
             0,
@@ -748,7 +748,7 @@ export class DwtService {
             0
           );
         else
-          this._DWObject.ShowFileDialog(
+          this._DWTObject.ShowFileDialog(
             true,
            "BMP,TIF,JPG,PNG,PDF|*.bmp;*.tif;*.png;*.jpg;*.pdf;*.tiff;*.jpeg",
             0,
@@ -760,7 +760,7 @@ export class DwtService {
           );
 
       } else {
-        this._DWObject.IfShowFileDialog = false;
+        this._DWTObject.IfShowFileDialog = false;
         res(saveInner(filePath, fileName, type));
       }
     });
@@ -793,7 +793,7 @@ export class DwtService {
         savedDir = protocol + window.location.hostname + ":" + _strPort + "/uploaded/";
         url = protocol + window.location.hostname + ":" + _strPort + strActionPage;
       }
-      this._DWObject.HTTPUpload(
+      this._DWTObject.HTTPUpload(
         url,
         indices,
         type,

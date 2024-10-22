@@ -32,7 +32,7 @@ export class DwtComponent implements OnInit, OnDestroy {
   /**
    * Two WebTwain objects doing all the job.
    */
-  protected DWObject: WebTwain = null;
+  protected DWTObject: WebTwain = null;
   protected VideoContainer: WebTwain = null;
   /**
    * Global variables and status flags.
@@ -259,15 +259,15 @@ export class DwtComponent implements OnInit, OnDestroy {
       //invalid rects
       return;
     for (let i = 0; i < this.barcodeRects.imageIds.length; i++) {
-      let currentIndex = this.DWObject.ImageIDToIndex(this.barcodeRects.imageIds[i]);
-      if (this.DWObject.CurrentImageIndexInBuffer === currentIndex) {
+      let currentIndex = this.DWTObject.ImageIDToIndex(this.barcodeRects.imageIds[i]);
+      if (this.DWTObject.CurrentImageIndexInBuffer === currentIndex) {
         let rectsOnOnePage = this.barcodeRects.rects[i];
         let mainViewer = <HTMLDivElement>document.querySelector("#" + this.containerId + " .dvs-viewer-main");
         let zoom = 0,
           viewerWidth = <number>mainViewer.offsetWidth,
           viewerHeight = <number>mainViewer.offsetHeight,
-          imageWidth = <number>this.DWObject.GetImageWidth(currentIndex),
-          imageHeight = <number>this.DWObject.GetImageHeight(currentIndex);
+          imageWidth = <number>this.DWTObject.GetImageWidth(currentIndex),
+          imageHeight = <number>this.DWTObject.GetImageHeight(currentIndex);
         this.mainViewerPos.y = <number>mainViewer.getBoundingClientRect().top;
         this.mainViewerPos.x = <number>mainViewer.getBoundingClientRect().left;
         if (viewerWidth >= imageWidth && viewerHeight >= imageHeight) {
@@ -286,7 +286,7 @@ export class DwtComponent implements OnInit, OnDestroy {
           let width = rect.w * zoom;
           let height = rect.h * zoom;
           //this.showMessage("x: " + rect.x + " y: " + rect.y + " w: " + rect.w + ", h: " + rect.h);
-          //this.DWObject.OverlayRectangle(currentIndex, rect.x, rect.y, rect.x + rect.w, rect.y + rect.h, 0xfe8e14, 0.5);
+          //this.DWTObject.OverlayRectangle(currentIndex, rect.x, rect.y, rect.x + rect.w, rect.y + rect.h, 0xfe8e14, 0.5);
           this.barcodeRectsOnCurrentImage.push({ x: left, y: top, w: width, h: height });
         }
         break;
@@ -294,10 +294,10 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   updateViewer() {
-    if (this.DWObject){
-		this.thumbnail = this.DWObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});
-		this.DWObject.Viewer.width = "100%";
-		this.DWObject.Viewer.height = "100%";
+    if (this.DWTObject){
+		this.thumbnail = this.DWTObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});
+		this.DWTObject.Viewer.width = "100%";
+		this.DWTObject.Viewer.height = "100%";
 		this.thumbnail.show();
 		return true;
 	}
@@ -305,7 +305,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       return false;
   }
   unBindViewer() {
-    if (this.DWObject.Viewer.unbind()) {
+    if (this.DWTObject.Viewer.unbind()) {
       let container = document.getElementById(this.containerId);
       while (container.firstChild) {
         container.removeChild(container.lastChild);
@@ -314,21 +314,21 @@ export class DwtComponent implements OnInit, OnDestroy {
         this.clearMessage();
       return true;
     } else {
-      this.showMessage(this.DWObject.ErrorString);
+      this.showMessage(this.DWTObject.ErrorString);
       return false;
     }
   }
   bindViewer() {
-    this.DWObject.Viewer.bind(<HTMLDivElement>document.getElementById(this.containerId));
-	this.DWObject.Viewer.width = "100%";
-	this.DWObject.Viewer.height = "100%";
-	this.thumbnail = this.DWObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});	
+    this.DWTObject.Viewer.bind(<HTMLDivElement>document.getElementById(this.containerId));
+	this.DWTObject.Viewer.width = "100%";
+	this.DWTObject.Viewer.height = "100%";
+	this.thumbnail = this.DWTObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});	
 	if (this.thumbnail) {
-		this.DWObject.Viewer.show();
+		this.DWTObject.Viewer.show();
 		this.thumbnail.show();
 		// Remove the context menu which is still not functioning correctly.
-		this.DWObject.Viewer.off('imageRightClick');
-		this.DWObject.Viewer.on('pageAreaSelected', (nImageIndex, rect) => {
+		this.DWTObject.Viewer.off('imageRightClick');
+		this.DWTObject.Viewer.on('pageAreaSelected', (nImageIndex, rect) => {
 			if (rect.length > 0) {
 				this.clearMessage();
 				var currentRect = rect[rect.length - 1];
@@ -344,12 +344,12 @@ export class DwtComponent implements OnInit, OnDestroy {
 				  this.zones.splice(rect.length - 1, 1, { x: currentRect.x, y: currentRect.y, width: currentRect.x + currentRect.width, height: currentRect.y + currentRect.height, index: nImageIndex });
 			}
 		});
-      this.DWObject.Viewer.on('OnImageAreaDeSelected', () => {
+      this.DWTObject.Viewer.on('OnImageAreaDeSelected', () => {
         this.clearMessage(); this.zones = [];
       });
-      this.bMobile ? this.DWObject.Viewer.cursor = 'pointer' : this.DWObject.Viewer.cursor = 'crosshair';
-      this.DWObject.Viewer.showPageNumber = true;
-      //this.DWObject.Viewer.off('imageRightClick');
+      this.bMobile ? this.DWTObject.Viewer.cursor = 'pointer' : this.DWTObject.Viewer.cursor = 'crosshair';
+      this.DWTObject.Viewer.showPageNumber = true;
+      //this.DWTObject.Viewer.off('imageRightClick');
       this.bMobile ? this.thumbnail.updateViewMode(<ViewMode>{columns: 1, rows: 5}) :
         this.thumbnail.updateViewMode(<ViewMode>{columns: 1, rows: 3});
       if (document.getElementById(this.containerId + "-fileInput"))
@@ -387,15 +387,15 @@ export class DwtComponent implements OnInit, OnDestroy {
       document.getElementById(this.containerId).parentElement.appendChild(WASMInput);
     }
     else {
-      console.log(this.DWObject.ErrorString);
+      console.log(this.DWTObject.ErrorString);
     }
   }
   initDWT(): void {
-    this.DWObject = null;
+    this.DWTObject = null;
     this.dwtService.mountDWT()
       .then(
         obj => {
-          this.DWObject = obj;
+          this.DWTObject = obj;
           this.bWin = this.dwtService.runningEnvironment.bWin;
           this.bUseCameraViaDirectShow = this.dwtService.bUseCameraViaDirectShow;
           this.dwtMounted = true;
@@ -405,7 +405,7 @@ export class DwtComponent implements OnInit, OnDestroy {
             }, err => this.showMessage(err));
           setTimeout(() => {
             this.bindViewer();
-            this.DWObject.Viewer.pageMargin = 10;
+            this.DWTObject.Viewer.pageMargin = 10;
           }, 0);
         },
         err => this.showMessage(err));
@@ -513,8 +513,8 @@ export class DwtComponent implements OnInit, OnDestroy {
       case "save":
         if (!this.emptyBuffer)
           this.clearMessage();
-        let selectedIndices = this.DWObject.SelectedImagesIndices;
-        let count = this.DWObject.HowManyImagesInBuffer;
+        let selectedIndices = this.DWTObject.SelectedImagesIndices;
+        let count = this.DWTObject.HowManyImagesInBuffer;
         for (let i = 0; i < count; i++)
           this.saveOptions.indices.push({ number: i, selected: !!selectedIndices.find(o => { return o == i; }) });
         break;
@@ -572,8 +572,8 @@ export class DwtComponent implements OnInit, OnDestroy {
       }, err => this.showMessage(err));
   }
   showEditor() {
-    this.DWObject.Viewer.createImageEditor().show();
-    this.DWObject.RegisterEvent('CloseImageEditorUI', () => {
+    this.DWTObject.Viewer.createImageEditor().show();
+    this.DWTObject.RegisterEvent('CloseImageEditorUI', () => {
       this.editorShown = false;
     });
     this.editorShown = true;
@@ -662,7 +662,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   setUpPlayVideo(config?) {
-    let _dwt = this.DWObject;
+    let _dwt = this.DWTObject;
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     let basicSetting, moreSetting;
@@ -710,10 +710,10 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   playVideo() {
-    let _dwt = this.DWObject;
+    let _dwt = this.DWTObject;
     if (this.bUseCameraViaDirectShow) {
-      this.DWObject.Addon.Webcam.StopVideo();
-      this.DWObject.Addon.Webcam.CloseSource();
+      this.DWTObject.Addon.Webcam.StopVideo();
+      this.DWTObject.Addon.Webcam.CloseSource();
     }
     
 	if (this.VideoContainer)
@@ -732,7 +732,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     } 
   }
   toggleVideo() {
-    let _dwt = this.DWObject;
+    let _dwt = this.DWTObject;
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     if (this.videoPlaying) {
@@ -744,7 +744,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       return this.playVideo();
   }
   handleRangeReset() {
-    let _dwt = this.DWObject;
+    let _dwt = this.DWTObject;
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     this.rangePicker.bCamera
@@ -753,7 +753,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     this.rangePicker.value = this.rangePicker.default;
   }
   handleRangeChange() {
-    let _dwt = this.DWObject;
+    let _dwt = this.DWTObject;
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
     this.rangePicker.bCamera
@@ -817,30 +817,30 @@ export class DwtComponent implements OnInit, OnDestroy {
   }
   handleMultiPageCheck() {
     if (this.saveOptions.multiPage) {
-      if (this.DWObject.SelectedImagesIndices.length === 1) {
+      if (this.DWTObject.SelectedImagesIndices.length === 1) {
         this.saveOptions.indices.forEach((value, index, arr) => { value.selected = true; arr[index] = value; });
-        this.DWObject.SelectAllImages();
+        this.DWTObject.SelectAllImages();
       }
     } else {
-      if (this.DWObject.SelectedImagesIndices.length > 1)
-        this.DWObject.SelectImages([this.DWObject.CurrentImageIndexInBuffer]);
+      if (this.DWTObject.SelectedImagesIndices.length > 1)
+        this.DWTObject.SelectImages([this.DWTObject.CurrentImageIndexInBuffer]);
       this.saveOptions.indices.forEach((value, index, arr) => {
         value.selected = false;
-        if (value.number === this.DWObject.CurrentImageIndexInBuffer)
+        if (value.number === this.DWTObject.CurrentImageIndexInBuffer)
           value.selected = true;
         arr[index] = value;
       });
     }
   }
   handleIndexSelection(selected: boolean, index: number) {
-    let selectedIndices = this.DWObject.SelectedImagesIndices;
+    let selectedIndices = this.DWTObject.SelectedImagesIndices;
     if (selected) {
       selectedIndices.push(index);
     } else {
       selectedIndices.splice(selectedIndices.indexOf(index), 1);
     }
     selectedIndices.sort();
-    this.DWObject.SelectImages(selectedIndices);
+    this.DWTObject.SelectImages(selectedIndices);
   }
   handleOutPutFormatChange(format) {
     if (format !== "PDF" && format !== "TIF") {
@@ -860,12 +860,12 @@ export class DwtComponent implements OnInit, OnDestroy {
       case "File":
         if (this.saveOptions.upload) {
           if (this.saveOptions.multiPage) {
-            let selectedIndices = this.DWObject.SelectedImagesIndices;
+            let selectedIndices = this.DWTObject.SelectedImagesIndices;
             this.dwtService.uploadToServer(selectedIndices, this.getImageType(this.saveOptions.outPutFormat), this.saveOptions.fileName)
               .then(result => { this.saveResults.uploadedFiles.push(result); this.clearMessage(); }, err => this.showMessage(err));
           }
           else {
-            let count = this.DWObject.HowManyImagesInBuffer;
+            let count = this.DWTObject.HowManyImagesInBuffer;
             for (let i = 0; i < count; i++) {
               this.dwtService.uploadToServer([i], this.getImageType(this.saveOptions.outPutFormat), this.saveOptions.fileName + "_" + (i + 1))
                 .then(result => { this.saveResults.uploadedFiles.push(result); this.clearMessage(); }, err => this.showMessage(err));
@@ -873,7 +873,7 @@ export class DwtComponent implements OnInit, OnDestroy {
           }
         } else {
           if (this.saveOptions.multiPage) {
-            let selectedIndices = this.DWObject.SelectedImagesIndices;
+            let selectedIndices = this.DWTObject.SelectedImagesIndices;
             let type = this.getImageType(this.saveOptions.outPutFormat);
             if (type === 2) type = 8;
             if (type === 4) type = 7;
@@ -885,7 +885,7 @@ export class DwtComponent implements OnInit, OnDestroy {
               }, err => this.showMessage(err));
           }
           else {
-            let count = this.DWObject.HowManyImagesInBuffer;
+            let count = this.DWTObject.HowManyImagesInBuffer;
             let fileName = this.saveOptions.fileName + "_" + 1;
             this.dwtService.saveLocally([0], this.getImageType(this.saveOptions.outPutFormat), fileName, true)
               .then(result => {
@@ -910,7 +910,7 @@ export class DwtComponent implements OnInit, OnDestroy {
         break;
       case "Blob":
         if (this.saveOptions.multiPage) {
-          let selectedIndices = this.DWObject.SelectedImagesIndices;
+          let selectedIndices = this.DWTObject.SelectedImagesIndices;
           this.dwtService.getBlob(
             selectedIndices,
             this.getImageType(this.saveOptions.outPutFormat))
@@ -921,7 +921,7 @@ export class DwtComponent implements OnInit, OnDestroy {
               this.clearMessage();
             }, err => this.showMessage(err));
         } else {
-          let count = this.DWObject.HowManyImagesInBuffer;
+          let count = this.DWTObject.HowManyImagesInBuffer;
           for (let i = 0; i < count; i++) {
             this.dwtService.getBlob(
               [i],
@@ -937,7 +937,7 @@ export class DwtComponent implements OnInit, OnDestroy {
         break;
       case "Base64":
         if (this.saveOptions.multiPage) {
-          let selectedIndices = this.DWObject.SelectedImagesIndices;
+          let selectedIndices = this.DWTObject.SelectedImagesIndices;
           this.dwtService.getBase64(
             selectedIndices,
             this.getImageType(this.saveOptions.outPutFormat))
@@ -947,7 +947,7 @@ export class DwtComponent implements OnInit, OnDestroy {
               this.clearMessage();
             }, err => this.showMessage(err));
         } else {
-          let count = this.DWObject.HowManyImagesInBuffer;
+          let count = this.DWTObject.HowManyImagesInBuffer;
           for (let i = 0; i < count; i++) {
             this.dwtService.getBase64(
               [i],
