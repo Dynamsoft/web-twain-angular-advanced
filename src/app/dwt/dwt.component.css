@@ -2,6 +2,10 @@
   border: 0;
 }
 
+.list-group {
+  list-style:none;
+}
+
 .mainContent {
   width: 100vw;
   max-width: 800px;

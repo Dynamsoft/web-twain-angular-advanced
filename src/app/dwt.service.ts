@@ -9,7 +9,7 @@ import { RuntimeSettings, TextResults, TextResult } from 'dwt/dist/types/Addon.B
 import { DWTInitialConfig } from 'dwt/dist/types/Dynamsoft';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'any'
 })
 
 export class DwtService {
@@ -285,12 +285,8 @@ export class DwtService {
         }
       });
       if (!waitForAnotherPromise) {
-        if (this._selectedDevice !== "") {
-          this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
-          res(true);
-        }
-        else
-          res(false);
+        this.generalSubject.next({ type: "deviceName", deviceName: this._selectedDevice });
+        res(true);
       }
     });
   }
@@ -459,10 +455,10 @@ export class DwtService {
         }
         settings.barcodeFormatIds = Dynamsoft.DBR.EnumBarcodeFormat.BF_ALL;
         if (config) {
-          if (config.formatId) {
+          if ('formatId' in config) {
             settings.barcodeFormatIds = config.formatId;
           }
-          if (config.formatId2) {
+          if ('formatId2' in config) {
             settings.barcodeFormatIds_2 = config.formatId2;
           }
           if (config.zones)
@@ -471,6 +467,8 @@ export class DwtService {
         // Clear old results before reading again
         this.barcodeResults = [];
         settings.region.regionMeasuredByPercentage = 0;
+
+        this._DWTObject.Viewer.fitWindow();
 
         if (config && config.zones && config.zones.length > 0) {
           let i = 0;
@@ -524,9 +522,10 @@ export class DwtService {
         }
         resultString.push({ text: "--------------------------", type: "seperator" });
         resultString.push({ text: "Total barcode(s) found: " + allBarcodeResults.length, type: "important" });
+        resultString.push({ text: "--------------------------", type: "seperator" });
         for (let i = 0; i < allBarcodeResults.length; ++i) {
           let result: TextResult = allBarcodeResults[i];
-          resultString.push({ text: "------------------", type: "seperator" });
+          if(i>0) resultString.push({ text: "------------------", type: "seperator" });
           resultString.push({ text: "Barcode " + (i + 1).toString(), type: "nomral" });
           resultString.push({ text: "Type: " + (result.barcodeFormatString ? result.barcodeFormatString : result.barcodeFormatString_2), type: "nomral" });
           resultString.push({ text: "Value: " + result.barcodeText, type: "important" });

@@ -13,3 +13,9 @@ a#dwt-btn-install:hover {
   margin-top: 0;
   margin-bottom: 0;
 }
+
+.close {
+  position: absolute;
+  top: 15px; 
+  right: 15px;
+}
