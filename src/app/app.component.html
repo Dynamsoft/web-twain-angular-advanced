@@ -26,50 +26,38 @@
       Dynamic Web TWAIN features image aquisition via scanners or cameras as well as image editing, uploading and
       barcode recoginzing, etc.
     </p>
-    <h5>Recommended environments</h5>
+    <h5>Recommended environments<sup>(*1)</sup></h5>
     <table class="mb-2 bc-table bc-table-web">
       <thead>
-        <tr class="bc-platforms">
-          <th class="bc-platform-desktop" colspan="5"><span><sup><strong>1</strong></sup></span></th>
-          <th class="bc-platform-mobile" colspan="3"><span><sup><strong>2</strong></sup></span></th>
-        </tr>
         <tr class="bc-browsers">
           <th class="bc-browser-chrome"><span class="bc-head-txt-label bc-head-icon-chrome"></span></th>
           <th class="bc-browser-firefox"><span class="bc-head-txt-label bc-head-icon-firefox"></span> </th>
           <th class="bc-browser-edge"><span class="bc-head-txt-label bc-head-icon-edge"></span></th>
           <th class="bc-browser-ie"><span class="bc-head-txt-label bc-head-icon-ie"></span> </th>
           <th class="bc-browser-safari"><span class="bc-head-txt-label bc-head-icon-safari"></span></th>
-          <th class="bc-browser-chrome_android"><span class="bc-head-txt-label bc-head-icon-chrome_android"></span></th>
-          <th class="bc-browser-firefox_android"><span class="bc-head-txt-label bc-head-icon-firefox_android"></span>
-          </th>
-          <th class="bc-browser-safari_ios"><span class="bc-head-txt-label bc-head-icon-safari_ios"></span></th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>&ge;80</td>
           <td>&ge;70</td>
-          <td>&ge;44<sup><strong>3</strong></sup></td>
-          <td>11<sup><strong>3</strong></sup></td>
-          <td>&ge;13<sup><strong>4</strong></sup></td>
-          <td>&ge;80</td>
-          <td>&ge;70</td>
-          <td>&ge;13<sup><strong>4</strong></sup></td>
+          <td>&ge;44<sup>(*2)</sup></td>
+          <td>11<sup>(*2)</sup></td>
+          <td>&ge;13<sup>(*3)</sup></td>
         </tr>
       </tbody>
     </table>
-    <p>[1] Windows7+; macOS 10.13+ ; Linux (Ubuntu 18.04, Debian 9, Fedora 32, etc.)</p>
-    <p>[2] iOS 13+ & iPadOS 13+ ; Android 10+</p>
-    <p>[3] Windows only</p>
-    <p>[4] macOS, iOS &amp; iPadOS only</p>
+    <p>[*1] Windows7+; macOS 10.13+ ; Linux (Ubuntu 18.04, Debian 9, Fedora 32, etc.)</p>
+    <p>[*2] Windows only</p>
+    <p>[*3] macOS, iOS &amp; iPadOS only</p>
     <h5 class="mt-2">Your current environment is</h5>
     <div id="current-env">{{currentEnv}}</div>
 
-    <button  *ngIf="bStartDemo" class="btn btn-outline-success" (click)="toggleStartDemo()" >Start Demo</button>
+    <button *ngIf="bStartDemo" class="btn btn-outline-success ds-button-start-demo" (click)="toggleStartDemo()" >Start Demo</button>
   </div>
   <app-dwt *ngIf="!bStartUp" [events]="eventsSubject.asObservable()"></app-dwt>
 </article>
 <!-- Footer -->
 <footer class="footbar">
-  <p>&copy; 2003–<span id="copyRightCurYear"></span> Dynamsoft. All rights reserved.</p>
+  <p>&copy; 2003-<span id="copyRightCurYear"></span> Dynamsoft. All rights reserved.</p>
 </footer>

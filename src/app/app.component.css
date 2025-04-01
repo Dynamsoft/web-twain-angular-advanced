@@ -331,3 +331,9 @@ table.bc-table {
 .bc-table-ext tbody td, .bc-table-ext thead th {
   width: 20%
 }
+
+.ds-button-start-demo{
+  margin-top: 20px;
+  padding: 10px 0;
+  cursor: pointer;
+}

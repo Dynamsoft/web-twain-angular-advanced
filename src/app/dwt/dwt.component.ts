@@ -1,18 +1,31 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+
 import { DwtService, Device } from './../dwt.service';
 import { WebTwain } from 'dwt/dist/types/WebTwain';
 import { ThumbnailViewer } from 'dwt/dist/types/WebTwain.Viewer';
 import { ThumbnailViewerSettings } from 'dwt/dist/types/WebTwain.Viewer';
 import { ViewMode } from 'dwt/dist/types/WebTwain.Viewer';
-import { ViewerEvent } from 'dwt/dist/types/WebTwain.Viewer';
-import { Subscription, Observable, empty } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
+
 import Dynamsoft from 'dwt';
-import { NgbModal, NgbModalRef, } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
+import { CallbackPipe } from '../callback.pipe';
+import { SafeurlPipe } from '../safeurl.pipe';
 
 @Component({
   selector: 'app-dwt',
   templateUrl: './dwt.component.html',
-  styleUrls: ['./dwt.component.css']
+  styleUrl: './dwt.component.css',
+  imports: [
+    NgbModule,
+    CommonModule,
+    FormsModule,
+    CallbackPipe,
+    SafeurlPipe
+  ]
 })
 export class DwtComponent implements OnInit, OnDestroy {
   @Input() events: Observable<void>;
@@ -38,8 +51,7 @@ export class DwtComponent implements OnInit, OnDestroy {
    * Global variables and status flags.
    */
   public bWin = true;
-  public dwtMounted = false;
-  public bMobile: boolean;
+  public dwtMounted = true;
   public bUseCameraViaDirectShow: boolean;
   public containerId = "dwtcontrolContainer";
   public videoContainerId = "videoContainer";
@@ -94,7 +106,7 @@ export class DwtComponent implements OnInit, OnDestroy {
   public currentOptionItems = [];
   public currentItem = "";
   public showRangePicker = false;
-  public rangePicker = null;
+  public rangePicker: any = null;
   public barcodeReaderOptions = {
     Symbologies: {
       All: true,
@@ -112,7 +124,8 @@ export class DwtComponent implements OnInit, OnDestroy {
     },
     Mode: "balance",
     showRects: true,
-    rectShowingTime: 3
+    rectShowingTime: 3,
+    interval: null
   };
   public saveOptions = {
     outPutType: "File",
@@ -132,12 +145,20 @@ export class DwtComponent implements OnInit, OnDestroy {
     base64ButtonText: [],
     saveFileText: [],
     blobToShow: null
-  }
+  };
+  public saveBarcodesDivScrollPos = 0;
+
+
   constructor(protected dwtService: DwtService, private modalService: NgbModal) {
-    this.initDWT();
-    this.bMobile = this.dwtService.runningEnvironment.bMobile;
+
   }
+
+  ngAfterViewInit() {
+    this.initDWT();
+  }
+
   ngOnInit() {
+
     this.eventsSubscription = this.events.subscribe(
       (args: any) => {
         if (args.type)
@@ -177,7 +198,8 @@ export class DwtComponent implements OnInit, OnDestroy {
         switch (bufferStatus) {
           default: break;
           case "empty": this.emptyBuffer = true; break;
-          case "changed": this.barcodeRectsOnCurrentImage = [];
+          case "changed": 
+            this.barcodeRectsOnCurrentImage = [];
             this.zones = [];
             break;
         }
@@ -193,23 +215,29 @@ export class DwtComponent implements OnInit, OnDestroy {
             case "httpResponse":
               this.handleOutPutMessage(input.responsString, input.type, false, false);
             case "deviceName":
-              this.deviceName = input.deviceName;
+              if (input.deviceName === "") {
+                this.deviceName = "Choose...";
+              } else {
+                this.deviceName = input.deviceName; 
+              }
               break;
             case "cameraOptions":
+              if (this.deviceName === "" || this.deviceName === "Choose...")
+                break;
               this.cameraOptions = input;
               for (let i = 0; i < input.length; i++) {
                 if (input[i].current) {
-                  this.currentOptionItems = input[i].items;
                   this.currentOption = input[i].name;
+                  this.currentOptionItems = input[i].items;
                   for (let j = 0; j < this.currentOptionItems.length; j++) {
                     if (this.currentOptionItems[j].checked) {
                       this.currentItem = this.currentOptionItems[j].value;
+                      this.setupPlayVideo({ prop: this.currentOption, value: this.currentItem });
                     }
                   }
                   break;
                 }
               }
-              this.setUpPlayVideo();
               this.playVideo();
               break;
             default: break;
@@ -306,9 +334,9 @@ export class DwtComponent implements OnInit, OnDestroy {
   }
   unBindViewer() {
     if (this.DWTObject.Viewer.unbind()) {
-      let container = document.getElementById(this.containerId);
+      let container = document.getElementById(this.containerId) as HTMLDivElement;
       while (container.firstChild) {
-        container.removeChild(container.lastChild);
+        container.removeChild(container.firstChild);
       }
       if (!this.emptyBuffer)
         this.clearMessage();
@@ -320,8 +348,25 @@ export class DwtComponent implements OnInit, OnDestroy {
   }
   bindViewer() {
     this.DWTObject.Viewer.bind(<HTMLDivElement>document.getElementById(this.containerId));
-	this.DWTObject.Viewer.width = "100%";
-	this.DWTObject.Viewer.height = "100%";
+    this.DWTObject.Viewer.width = "100%";
+    this.DWTObject.Viewer.height = "100%";
+    this.DWTObject.Viewer.on("wheel", ()=>{
+      this.barcodeReaderOptions.showRects = false;
+      if(this.barcodeReaderOptions.interval) {
+        clearInterval(this.barcodeReaderOptions.interval);
+        this.barcodeReaderOptions.interval = null;
+      }
+      this.barcodeReaderOptions.rectShowingTime = 3;
+    });
+    this.DWTObject.Viewer.on("scroll", ()=>{
+      this.barcodeReaderOptions.showRects = false;
+      if(this.barcodeReaderOptions.interval) {
+        clearInterval(this.barcodeReaderOptions.interval);
+        this.barcodeReaderOptions.interval = null;
+      }
+      this.barcodeReaderOptions.rectShowingTime = 3;
+    });
+
 	this.thumbnail = this.DWTObject.Viewer.createThumbnailViewer(<ThumbnailViewerSettings>{size: '20%'});	
 	if (this.thumbnail) {
 		this.DWTObject.Viewer.show();
@@ -347,11 +392,10 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.DWTObject.Viewer.on('OnImageAreaDeSelected', () => {
         this.clearMessage(); this.zones = [];
       });
-      this.bMobile ? this.DWTObject.Viewer.cursor = 'pointer' : this.DWTObject.Viewer.cursor = 'crosshair';
+      this.DWTObject.Viewer.cursor = 'crosshair';
       this.DWTObject.Viewer.showPageNumber = true;
       //this.DWTObject.Viewer.off('imageRightClick');
-      this.bMobile ? this.thumbnail.updateViewMode(<ViewMode>{columns: 1, rows: 5}) :
-        this.thumbnail.updateViewMode(<ViewMode>{columns: 1, rows: 3});
+      this.thumbnail.updateViewMode(<ViewMode>{columns: 1, rows: 3});
       if (document.getElementById(this.containerId + "-fileInput"))
         // Only allow one such input on the page
         return;
@@ -362,7 +406,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       WASMInput.setAttribute("id", this.containerId + "-fileInput");
       WASMInput.setAttribute("type", "file");
       WASMInput.onclick = _ => {
-        let filters = [], filter = "";
+        let filters : string[] = [], filter = "";
         this.formatsToImport.JPG ? filters.push("image/jpeg") : false;
         this.formatsToImport.PNG ? filters.push("image/png") : false;
         this.formatsToImport.TIF ? filters.push("image/tiff") : false;
@@ -377,7 +421,7 @@ export class DwtComponent implements OnInit, OnDestroy {
         WASMInput.setAttribute("accept", filter);
       }
       WASMInput.onchange = evt => {
-        let _input = <HTMLInputElement>evt.target;
+        let _input = evt.target as HTMLInputElement;
         this.dwtService.load(_input.files)
           .then(_ => {
             this.closeModal(true);
@@ -417,6 +461,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       beforeDismiss: (): boolean => {
         switch (type) {
           case "acquire":
+            this.dwtService.selectADevice("");
             this.deviceName = "Choose...";
             return true;
           case "camera":
@@ -427,32 +472,45 @@ export class DwtComponent implements OnInit, OnDestroy {
               }
               else {
                 this.toggleVideo();
+                this.dwtService.selectADevice("");
+                this.deviceName = "Choose...";
                 return true;
               }
             } else {
+              this.dwtService.selectADevice("");
               this.deviceName = "Choose...";
               return this.VideoContainer.Viewer.unbind();
             }
           case "barcode":
-            let __interval = setInterval(
+            if(this.barcodeReaderOptions.interval) {
+              clearInterval(this.barcodeReaderOptions.interval);
+            }
+
+            this.barcodeReaderOptions.interval = setInterval(
               () => {
                 this.barcodeReaderOptions.rectShowingTime--;
-                if (this.barcodeReaderOptions.rectShowingTime === 0) {
+
+                if (this.barcodeReaderOptions.rectShowingTime <= 0) {
                   this.barcodeReaderOptions.rectShowingTime = 3;
                   this.barcodeReaderOptions.showRects = false;
-                  clearInterval(__interval);
+                  clearInterval(this.barcodeReaderOptions.interval);
+                  this.barcodeReaderOptions.interval = null;
                 }
               }, 1000);
             this.barcodeButtonText = "Read";
             this.handleOutPutMessage("", "", true, true);
+
+            let barcodesDiv = document.querySelector('.barcodeReaderOptions');
+            if(barcodesDiv) {
+              this.saveBarcodesDivScrollPos = barcodesDiv.scrollTop;
+            }
+            
             return true;
           case "save":
             this.saveOptions.indices = [];
             return true;
-            break;
           default:
             return true;
-            break;
         }
       }
     });
@@ -509,6 +567,18 @@ export class DwtComponent implements OnInit, OnDestroy {
         if (!this.emptyBuffer)
           this.clearMessage();
         this.barcodeReaderOptions.showRects = true;
+        this.barcodeRectsOnCurrentImage = [];
+        this.barcodeReaderOptions.rectShowingTime = 3;
+        if(this.barcodeReaderOptions.interval) {
+          clearInterval(this.barcodeReaderOptions.interval);
+          this.barcodeReaderOptions.interval = null;
+        }
+        
+        setTimeout(() => {
+          let barcodesDiv = document.querySelector('.barcodeReaderOptions');
+          if(barcodesDiv)
+            barcodesDiv.scrollTo(0, this.saveBarcodesDivScrollPos);
+        }, 0);
         break;
       case "save":
         if (!this.emptyBuffer)
@@ -529,20 +599,25 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.modalRef.dismiss();
   }
   handleDeviceChange(deviceType: string) {
+
+    console.log('this.deviceName 0' + this.deviceName);
     if (this.deviceName === "" || this.deviceName === "Choose...")
       return;
+
     this.dwtService.selectADevice(this.deviceName)
       .then(
         done => done ? this.openADevice(deviceType) : this.showMessage("Device selecting failed!"),
         error => typeof error === "string" ? this.showMessage(error) : this.showMessage("Device selecting failed!"));
   }
   openADevice(deviceType: string) {
+    
     this.clearMessage();
     if (deviceType === "camera") {
       if (this.videoPlaying)
         this.toggleVideo();
       this.toggleVideo();
     }
+    
   }
   acquire() {
     this.scan();
@@ -584,6 +659,12 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.barcodeButtonText = "Read";
       return;
     }
+
+    let barcodesDiv = document.querySelector('.barcodeReaderOptions');
+    if(barcodesDiv) {
+      this.saveBarcodesDivScrollPos = barcodesDiv.scrollTop;
+    }
+
     this.barcodeButtonText = "Reading...";
     let formatId = 0, formatId2 = 0;
     this.barcodeReaderOptions.Symbologies.Aztec ? formatId += Dynamsoft.DBR.EnumBarcodeFormat.BF_AZTEC : formatId += 0;
@@ -605,19 +686,24 @@ export class DwtComponent implements OnInit, OnDestroy {
       + Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_RM4SCC
       + Dynamsoft.DBR.EnumBarcodeFormat_2.BF2_PLANET
       : formatId2 += 0;
-    this.barcodeRectsOnCurrentImage.splice(0, this.barcodeRectsOnCurrentImage.length);
     this.dwtService.readBarcode({ formatId: formatId, formatId2: formatId2, zones: this.zones });
   }
   hideBarcodeTextResults() {
     this.barcodeButtonText = "Read";
     this.handleOutPutMessage("", "", true, true);
+
+    setTimeout(() => {
+      let barcodesDiv = document.querySelector('.barcodeReaderOptions');
+      if(barcodesDiv)
+        barcodesDiv.scrollTo(0, this.saveBarcodesDivScrollPos);
+    }, 0);
   }
   handleOutPutMessage(message: string, type: string, bReset: boolean, bNoScroll: boolean) {
     let _noScroll = false, _type = "info";
     if (type)
       _type = type;
     if (_type === "httpResponse") {
-      let msgWindow = window.open("", "Response from server", "height=500,width=750,top=0,left=0,toolbar=no,menubar=no,scrollbars=no, resizable=no,location=no, status=no");
+      let msgWindow = window.open("", "Response from server", "height=500,width=750,top=0,left=0,toolbar=no,menubar=no,scrollbars=no, resizable=no,location=no, status=no") as Window;
       msgWindow.document.writeln(message);
     } else {
       if (bNoScroll)
@@ -633,6 +719,10 @@ export class DwtComponent implements OnInit, OnDestroy {
     }
   }
   handleOptionChange() {
+
+    if (this.deviceName === "" || this.deviceName === "Choose...")
+      return;
+
     for (let i = 0; i < this.cameraOptions.length; i++) {
       if (this.cameraOptions[i].name === this.currentOption) {
         this.cameraOptions[i].current = true;
@@ -644,24 +734,28 @@ export class DwtComponent implements OnInit, OnDestroy {
     for (let j = 0; j < this.currentOptionItems.length; j++) {
       if (this.currentOptionItems[j].checked) {
         this.currentItem = this.currentOptionItems[j].value;
-        this.setUpPlayVideo({ prop: this.currentOption, value: this.currentItem });
+        this.setupPlayVideo({ prop: this.currentOption, value: this.currentItem });
         this.playVideo();
         break;
       }
     }
   }
   handleItemPicked() {
+    
+    if (this.deviceName === "" || this.deviceName === "Choose...")
+      return;
+    
     for (let j = 0; j < this.currentOptionItems.length; j++) {
       if (this.currentItem === this.currentOptionItems[j].value) {
         this.currentOptionItems[j].checked = true;
-        this.setUpPlayVideo({ prop: this.currentOption, value: this.currentItem });
+        this.setupPlayVideo({ prop: this.currentOption, value: this.currentItem });
         this.playVideo();
       } else {
         this.currentOptionItems[j].checked = false;
       }
     }
   }
-  setUpPlayVideo(config?) {
+  setupPlayVideo(config?) {
     let _dwt = this.DWTObject;
     if (this.VideoContainer)
       _dwt = this.VideoContainer;
@@ -839,7 +933,6 @@ export class DwtComponent implements OnInit, OnDestroy {
     } else {
       selectedIndices.splice(selectedIndices.indexOf(index), 1);
     }
-    selectedIndices.sort();
     this.DWTObject.SelectImages(selectedIndices);
   }
   handleOutPutFormatChange(format) {
