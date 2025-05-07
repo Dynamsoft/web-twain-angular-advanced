@@ -120,6 +120,17 @@ export class DwtService {
               this._DWTObject = _DWTObject;
               /*this._DWTObject.IfShowProgressBar = false;
               this._DWTObject.IfShowCancelDialogWhenImageTransfer = false;*/
+              
+              // from v19.0
+              this._DWTObject.Addon.PDF.SetReaderOptions({
+                convertMode: Dynamsoft.DWT.EnumDWT_ConvertMode.CM_RENDERALL,
+                renderOptions: {
+                    renderAnnotations: true,
+                    resolution: 200
+                },
+                preserveUnmodifiedOnSave: true
+              });
+
               /**
                * The event OnBufferChanged is used here for monitoring the image buffer.
                */
@@ -405,12 +416,6 @@ export class DwtService {
    */
   load(files?: FileList): Promise<any> {
     return new Promise((res, rej) => {
-      this._DWTObject.Addon.PDF.SetReaderOptions({
-        convertMode: Dynamsoft.DWT.EnumDWT_ConvertMode.CM_AUTO,
-        renderOptions: {
-            resolution: 200
-        }
-      });
       this._DWTObject.IfShowFileDialog = true;
       this._DWTObject.RegisterEvent("OnPostLoad", (
         directory: string,
