@@ -148,7 +148,6 @@ export class DwtComponent implements OnInit, OnDestroy {
   };
   public saveBarcodesDivScrollPos = 0;
 
-
   constructor(protected dwtService: DwtService, private modalService: NgbModal) {
 
   }
@@ -351,7 +350,7 @@ export class DwtComponent implements OnInit, OnDestroy {
     this.DWTObject.Viewer.width = "100%";
     this.DWTObject.Viewer.height = "100%";
     this.DWTObject.Viewer.on("wheel", ()=>{
-      this.barcodeReaderOptions.showRects = false;
+      //this.barcodeReaderOptions.showRects = false;
       if(this.barcodeReaderOptions.interval) {
         clearInterval(this.barcodeReaderOptions.interval);
         this.barcodeReaderOptions.interval = null;
@@ -359,7 +358,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       this.barcodeReaderOptions.rectShowingTime = 3;
     });
     this.DWTObject.Viewer.on("scroll", ()=>{
-      this.barcodeReaderOptions.showRects = false;
+      //this.barcodeReaderOptions.showRects = false;
       if(this.barcodeReaderOptions.interval) {
         clearInterval(this.barcodeReaderOptions.interval);
         this.barcodeReaderOptions.interval = null;
@@ -654,6 +653,8 @@ export class DwtComponent implements OnInit, OnDestroy {
     this.editorShown = true;
   }
   readBarcode() {
+    this.DWTObject.Viewer.fitWindow();
+
     if (this.outputMessages.length > 0) {
       this.handleOutPutMessage("", "", true, true);
       this.barcodeButtonText = "Read";
@@ -735,7 +736,6 @@ export class DwtComponent implements OnInit, OnDestroy {
       if (this.currentOptionItems[j].checked) {
         this.currentItem = this.currentOptionItems[j].value;
         this.setupPlayVideo({ prop: this.currentOption, value: this.currentItem });
-        this.playVideo();
         break;
       }
     }
@@ -749,7 +749,6 @@ export class DwtComponent implements OnInit, OnDestroy {
       if (this.currentItem === this.currentOptionItems[j].value) {
         this.currentOptionItems[j].checked = true;
         this.setupPlayVideo({ prop: this.currentOption, value: this.currentItem });
-        this.playVideo();
       } else {
         this.currentOptionItems[j].checked = false;
       }
@@ -794,11 +793,19 @@ export class DwtComponent implements OnInit, OnDestroy {
         };
         return;
       } else {
+
+        let bChanged = false, _dwtService = this.dwtService;
         switch (config.prop) {
-          case "Frame Rate": _dwt.Addon.Webcam.SetFrameRate(config.value); break;
-          case "Media Type": _dwt.Addon.Webcam.SetMediaType(config.value); break;
-          case "Resolution": _dwt.Addon.Webcam.SetResolution(config.value); break;
-          default: break;
+            case "Frame Rate": if(_dwtService.frameRate != parseInt(config.value)) { _dwtService.frameRate = parseInt(config.value); bChanged = true; } break;
+            case "Media Type": if(_dwtService.strMediaType != config.value) { _dwtService.strMediaType = config.value; bChanged = true;  } break;
+            case "Resolution": if(_dwtService.strResolution != config.value) { _dwtService.strResolution = config.value; bChanged = true;  } break;
+            default: break;
+        }
+
+        if(bChanged) {
+            _dwt.Addon.Webcam.SetMediaType(_dwtService.strMediaType);
+            _dwt.Addon.Webcam.SetResolution(_dwtService.strResolution);
+            _dwt.Addon.Webcam.SetFrameRate(_dwtService.frameRate);
         }
       }
     }
@@ -818,6 +825,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       return false;
     }
     if (this.bUseCameraViaDirectShow) {
+
       _dwt.Addon.Webcam.PlayVideo(_dwt, 80, () => {
         this.showVideoText = "Stop Video";
         this.videoPlaying = true;
@@ -1056,6 +1064,7 @@ export class DwtComponent implements OnInit, OnDestroy {
       default: break;
     }
   }
+
   copyURLToShow(url) {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url)

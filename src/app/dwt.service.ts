@@ -37,6 +37,10 @@ export class DwtService {
    * Camera
    */
   protected _useCamera: boolean;
+  public strMediaType = '';
+  public strResolution = '';
+  public frameRate = 0;
+  
   /**
    * The Webcam Addon vai DirectShow only works for Service mode on Desktop (dwt@16.1.1)
    * Otherwise, Camera Addon is used.
@@ -317,6 +321,11 @@ export class DwtService {
       _currentRes = resolutions.GetCurrent();
     let _advancedSettings = [],
       _advancedCameraSettings = [];
+
+    this.strMediaType = _currentmT;
+    this.strResolution = _currentRes;
+    this.frameRate = _currentfR;
+
     for (let i = 0; i < mediaTypes.GetCount(); i++) {
       mediaTypes.Get(i) === _currentmT
         ? _mediaTypes[i] = { value: mediaTypes.Get(i).toString(), checked: true }
@@ -451,8 +460,10 @@ export class DwtService {
         _index = this._DWTObject.CurrentImageIndexInBuffer;
     }
     Dynamsoft.Lib.showMask();
+
     this._DWTObject.Addon.BarcodeReader.getRuntimeSettings()
       .then(settings => {
+
         if (this._DWTObject.GetImageBitDepth(_index) === 1) {
           settings.scaleDownThreshold = 214748347;
         } else {
@@ -471,9 +482,7 @@ export class DwtService {
         }
         // Clear old results before reading again
         this.barcodeResults = [];
-        settings.region.regionMeasuredByPercentage = 0;
-
-        this._DWTObject.Viewer.fitWindow();
+        settings.region.regionMeasuredByPercentage = 0;    
 
         if (config && config.zones && config.zones.length > 0) {
           let i = 0;
