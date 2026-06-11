@@ -34,7 +34,7 @@ Environment: Node.js version - 22.14.0,  Angular version - v19.2.1
 4. Run the Angular application as follows:
 
    ```
-   ng serve
+   npm run start
    ```
 
 5. Set up and run the server piece which is used solely for receiving uploaded files. Run the  command-line as follows:
