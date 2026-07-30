@@ -22,7 +22,7 @@
     "@ng-bootstrap/ng-bootstrap": "19.0.1",
     "@popperjs/core": "2.11.8",
     "bootstrap": "5.3.3",
-    "dwt": "19.4.0",
+    "dwt": "19.4.2",
     "rxjs": "7.8.1",
     "tslib": "2.5.2",
     "zone.js": "0.15.1"
