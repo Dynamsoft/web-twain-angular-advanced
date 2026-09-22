@@ -1,3 +1,5 @@
+/// <reference types="jasmine" />
+
 import { CallbackPipe } from './callback.pipe';
 
 describe('CallbackPipe', () => {

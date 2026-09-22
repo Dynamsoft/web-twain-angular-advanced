@@ -16,10 +16,10 @@ import { DwtComponent } from './dwt/dwt.component';
   ]
 })
 export class AppComponent implements OnInit {
-  eventsSubject: Subject<void> = new Subject<void>();
+  eventsSubject: Subject<Event> = new Subject<Event>();
 
   @HostListener('window:resize', ['$event'])
-  onResize(event) {
+  onResize(event: Event) {
     this.eventsSubject.next(event);
   }
   title = 'DWT + Angular Sample';
@@ -30,7 +30,7 @@ export class AppComponent implements OnInit {
   bUseCameraViaDirectShow = true;
   constructor(protected dwtService: DwtService) {
     let _this = this; 
-    dwtService.showStartDemo(function(bShowStartDemo){
+    dwtService.showStartDemo(function(bShowStartDemo: boolean){
       _this.bStartDemo = bShowStartDemo;
       //_this.onResize(undefined);
     });
