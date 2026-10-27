@@ -11,7 +11,7 @@ This project was bootstrapped with [Angular CLI](https://github.com/angular/angu
   * Barcode reading
 
 ## Usage
-Environment: Node.js version - 22.14.0,  Angular version - v20.3.27
+Environment: Node.js version - 22.14.0,  Angular version - v20.3.34
 1. Apply for a [30-day free trial license](https://www.dynamsoft.com/customer/license/trialLicense?product=dwt) of Dynamic Web TWAIN.
 
 2. Update the license key in two files `src\environments\environment.ts` and `src\environments\environment.prod.ts` :
@@ -44,6 +44,8 @@ Environment: Node.js version - 22.14.0,  Angular version - v20.3.27
    npm install
    node server.js
    ```
+
+   The sample server exposes files in `server\uploaded` under `/uploaded` so the application can link to them. Treat these links as public and do not upload confidential documents. Other server files are not served as static content.
 
 ## Build
 
