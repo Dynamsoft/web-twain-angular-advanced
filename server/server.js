@@ -61,7 +61,13 @@ app.post('/upload', async function (req, res) {
             return;
         }
 
-        var destinationPath = path.resolve(uploadDir, fileName);
+        var safeFileName = path.basename(fileName);
+        if (safeFileName !== fileName) {
+            res.status(400).end('Invalid file name');
+            return;
+        }
+
+        var destinationPath = path.resolve(uploadDir, safeFileName);
         var destinationRelativePath = path.relative(uploadDir, destinationPath);
         if (!destinationRelativePath || destinationRelativePath === '..' ||
             destinationRelativePath.indexOf('..' + path.sep) === 0 || path.isAbsolute(destinationRelativePath)) {
